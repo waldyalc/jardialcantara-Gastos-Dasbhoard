@@ -1,0 +1,4 @@
+interface:
+  display_name: "Project Agent Guide"
+  short_description: "Create portable AGENTS.md handoff guides"
+  default_prompt: "Use $project-agent-guide to create or improve a portable AGENTS.md guide for this project."

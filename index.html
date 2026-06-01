@@ -1,0 +1,265 @@
+﻿<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gastos personales - Jardi Alcantara</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="config.js" defer></script>
+    <script src="script.js" defer></script>
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="auth-screen" id="auth-screen">
+        <div class="auth-card">
+          <div class="auth-brand">
+            <div class="brand-mark">JA</div>
+            <span>Gastos personales</span>
+          </div>
+          <h1>Bienvenido</h1>
+          <p>Inicia sesiÃ³n para continuar</p>
+          <div class="setup-warning hidden" id="setup-warning" aria-live="polite"></div>
+
+          <div class="quick-access">
+            <span>Acceso rÃ¡pido</span>
+            <button class="google-auth-btn" type="button" id="google-login" aria-label="Iniciar sesiÃ³n con Google">
+              <span class="google-mark" aria-hidden="true">G</span>
+              <strong>Iniciar sesiÃ³n con Google</strong>
+            </button>
+          </div>
+
+          <div class="auth-divider"><span>o accede con credenciales</span></div>
+          <form class="auth-form" id="password-login">
+            <span class="form-eyebrow">Acceso con credenciales</span>
+            <label for="temp-username">Usuario o correo
+              <input id="temp-username" name="username" type="text" autocomplete="username" placeholder="Usuario" required />
+            </label>
+            <label for="temp-password">ContraseÃ±a
+              <span class="password-field">
+                <input id="temp-password" name="password" type="password" autocomplete="current-password" placeholder="Tu contraseÃ±a" required />
+                <button class="password-toggle" type="button" id="toggle-password" aria-label="Mostrar contraseÃ±a">
+                  <i data-lucide="eye"></i>
+                </button>
+              </span>
+            </label>
+            <div class="auth-actions">
+              <button class="primary-btn" type="submit">Iniciar sesiÃ³n</button>
+              <button class="text-btn" type="button" id="demo-preview">Ver demo</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <section class="dashboard hidden" id="dashboard">
+        <header class="page-head">
+          <div>
+            <h1>Gastos personales</h1>
+            <p id="sync-copy">Cuenta de Supabase sincronizada para Jardi Alcantara.</p>
+          </div>
+          <div class="head-actions">
+            <button class="ghost-btn" id="sync-now" title="Sincronizar ahora"><i data-lucide="refresh-cw"></i><span>Sincronizar</span></button>
+            <button class="ghost-btn" id="add-expense"><i data-lucide="plus"></i><span>Agregar gasto</span></button>
+            <button class="icon-btn" id="logout" title="Cerrar sesiÃ³n"><i data-lucide="log-out"></i></button>
+          </div>
+        </header>
+
+        <nav class="period-tabs" id="period-tabs" aria-label="Filtro de perÃ­odo">
+          <button data-period="today">Hoy</button>
+          <button data-period="last3">Ãšltimos 3 dÃ­as</button>
+          <button data-period="last7">Ãšltimos 7 dÃ­as</button>
+          <button data-period="last30">Ãšltimos 30 dÃ­as</button>
+          <button class="active" data-period="thisMonth">Este mes</button>
+          <button data-period="lastMonth">Mes pasado</button>
+          <button data-period="ytd">AÃ±o actual</button>
+          <button data-period="all">Todo</button>
+          <button data-period="custom">Personalizado</button>
+        </nav>
+
+        <section class="custom-range hidden" id="custom-range">
+          <label>Inicio <input type="date" id="custom-start" /></label>
+          <label>Fin <input type="date" id="custom-end" /></label>
+          <button class="secondary-btn compact" id="apply-custom">Aplicar</button>
+        </section>
+
+        <section class="top-metrics">
+          <article class="metric-card">
+            <span>Salida</span>
+            <strong id="outflow-total">RD$0</strong>
+          </article>
+          <article class="metric-card">
+            <span>Presupuesto usado</span>
+            <strong id="projection-used">0%</strong>
+            <small id="projection-copy">RD$0 de RD$0 este mes</small>
+          </article>
+        </section>
+
+        <section class="panel trajectory-panel">
+          <div class="panel-head">
+            <div>
+              <h2>Trayectoria de gasto</h2>
+              <p id="trajectory-subtitle">Gasto acumulado del mes vs. presupuesto mensual.</p>
+            </div>
+            <button class="secondary-btn compact" id="open-projections">Definir presupuesto</button>
+          </div>
+          <div class="trajectory-stats">
+            <div>
+              <span>Gastado en el mes</span>
+              <strong id="mtd-spent">RD$0</strong>
+              <small id="pace-copy">En ritmo</small>
+            </div>
+            <div class="forecast">
+              <span>PronÃ³stico de cierre</span>
+              <strong id="forecast-total">RD$0</strong>
+              <small id="forecast-copy">RD$0 por debajo del lÃ­mite</small>
+            </div>
+          </div>
+          <div class="chart-card">
+            <svg id="trajectory-chart" viewBox="0 0 1200 390" preserveAspectRatio="none" role="img" aria-label="GrÃ¡fico de trayectoria de gasto"></svg>
+            <div class="chart-tooltip" id="trajectory-tooltip" aria-hidden="true"></div>
+          </div>
+          <div class="chart-legend">
+            <span><i class="legend-dot spend"></i>Gasto del mes</span>
+            <span><i class="legend-dot pace"></i>Ritmo proyectado</span>
+            <span><i class="legend-dot daily-good"></i>DÃ­a bajo ritmo</span>
+            <span><i class="legend-dot daily-over"></i>DÃ­a sobre ritmo</span>
+          </div>
+        </section>
+
+        <section class="analytics-grid">
+          <article class="panel">
+            <div class="panel-head tight">
+              <div>
+                <h2>Este mes por categorÃ­a</h2>
+              </div>
+            </div>
+            <div class="donut-layout">
+              <div class="donut" id="category-donut">
+                <div class="donut-center"><span>Total</span><strong id="donut-total">RD$0</strong></div>
+              </div>
+              <div class="legend" id="category-legend"></div>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head tight">
+              <div>
+                <h2>Ãšltimos 6 meses por categorÃ­a</h2>
+              </div>
+            </div>
+            <svg id="six-month-chart" viewBox="0 0 900 340" preserveAspectRatio="none" role="img" aria-label="Ãšltimos 6 meses por categorÃ­a"></svg>
+            <div class="chart-tooltip" id="six-month-tooltip" aria-hidden="true"></div>
+          </article>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2 id="category-table-title">Este mes por categorÃ­a</h2>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>CategorÃ­a</th>
+                  <th>Gastado</th>
+                  <th>Proyectado</th>
+                  <th>% usado</th>
+                  <th>Restante</th>
+                  <th>Ritmo</th>
+                </tr>
+              </thead>
+              <tbody id="category-table-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2 id="transactions-title">Movimientos</h2>
+              <p id="transactions-copy">Cada gasto personal en un lugar fÃ¡cil de revisar.</p>
+            </div>
+            <div class="transaction-tools">
+              <button class="secondary-btn compact active" data-category-filter="all">Todo</button>
+              <input type="search" id="transaction-search" placeholder="Buscar comercio, notas o categorÃ­a..." />
+            </div>
+          </div>
+          <div class="category-pills" id="category-pills"></div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Comercio</th>
+                  <th>CategorÃ­a</th>
+                  <th>Cuenta</th>
+                  <th>Monto</th>
+                  <th>Notas</th>
+                </tr>
+              </thead>
+              <tbody id="transactions-body"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <div class="modal-backdrop" id="projection-modal" aria-hidden="true">
+      <section class="modal projection-modal" role="dialog" aria-modal="true" aria-labelledby="projection-title">
+        <header>
+          <div>
+            <h2 id="projection-title">Definir presupuesto mensual</h2>
+            <p>CuÃ¡nto planeas gastar por categorÃ­a durante el mes.</p>
+          </div>
+          <button class="icon-btn" id="close-projections" title="Cerrar"><i data-lucide="x"></i></button>
+        </header>
+        <div class="modal-summary">
+          <label>Mes <input type="month" id="projection-month" /></label>
+          <div><span>Total proyectado</span><strong id="projection-modal-total">RD$0</strong></div>
+        </div>
+        <div class="projection-form" id="projection-form"></div>
+        <footer>
+          <span id="projection-count">0 de 0 categorías presupuestadas</span>
+          <div>
+            <button class="secondary-btn compact" id="cancel-projections">Cancelar</button>
+            <button class="primary-btn compact" id="save-projections">Guardar presupuesto</button>
+          </div>
+        </footer>
+      </section>
+    </div>
+
+    <div class="modal-backdrop" id="expense-modal" aria-hidden="true">
+      <section class="modal expense-modal" role="dialog" aria-modal="true" aria-labelledby="expense-title">
+        <header>
+          <div>
+            <h2 id="expense-title">Agregar gasto</h2>
+            <p>Registra un gasto personal de Jardi Alcantara.</p>
+          </div>
+          <button class="icon-btn" id="close-expense" title="Cerrar"><i data-lucide="x"></i></button>
+        </header>
+        <form id="expense-form" class="expense-form">
+          <label>Fecha <input type="date" name="spent_at" required /></label>
+          <label>Comercio <input type="text" name="merchant" placeholder="Restaurante, Amazon, farmacia..." required /></label>
+          <label>DescripciÃ³n <input type="text" name="description" placeholder="DescripciÃ³n opcional" /></label>
+          <label>CategorÃ­a <select name="category_id" required></select></label>
+          <label>Cuenta <input type="text" name="payment_account" placeholder="Tarjeta, efectivo, banco..." /></label>
+          <label>Monto <input type="number" name="amount" min="1" step="0.01" required /></label>
+          <label class="span-2">Notas <textarea name="notes" rows="3" placeholder="Algo Ãºtil para revisar despuÃ©s"></textarea></label>
+          <footer class="span-2">
+            <button type="button" class="secondary-btn compact" id="cancel-expense">Cancelar</button>
+            <button type="submit" class="primary-btn compact">Guardar gasto</button>
+          </footer>
+        </form>
+      </section>
+    </div>
+
+    <div class="toast" id="toast"></div>
+  </body>
+</html>

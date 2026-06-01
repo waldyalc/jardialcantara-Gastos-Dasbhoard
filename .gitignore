@@ -1,0 +1,11 @@
+config.js
+.agents/
+
+# Local development
+.DS_Store
+Thumbs.db
+*.log
+
+# Editor/system files
+.vscode/
+.idea/
