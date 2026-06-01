@@ -97,6 +97,16 @@
             <strong id="projection-used">0%</strong>
             <small id="projection-copy">RD$0 de RD$0 este mes</small>
           </article>
+          <article class="metric-card income-card">
+            <span>Ingresos proyectados</span>
+            <strong id="income-total">RD$0</strong>
+            <small id="income-copy">Este mes</small>
+          </article>
+          <article class="metric-card balance-card">
+            <span>Balance mensual</span>
+            <strong id="balance-total">RD$0</strong>
+            <small id="balance-copy">Ingresos − Gastos</small>
+          </article>
         </section>
 
         <section class="panel trajectory-panel">
@@ -105,7 +115,10 @@
               <h2>Trayectoria de gasto</h2>
               <p id="trajectory-subtitle">Gasto acumulado del mes vs. presupuesto mensual.</p>
             </div>
+            <div class="panel-actions">
+            <button class="secondary-btn compact" id="open-income">Definir ingresos</button>
             <button class="secondary-btn compact" id="open-projections">Definir presupuesto</button>
+          </div>
           </div>
           <div class="trajectory-stats">
             <div>
@@ -155,6 +168,35 @@
             <svg id="six-month-chart" viewBox="0 0 900 340" preserveAspectRatio="none" role="img" aria-label="Ãšltimos 6 meses por categorÃ­a"></svg>
             <div class="chart-tooltip" id="six-month-tooltip" aria-hidden="true"></div>
           </article>
+        </section>
+
+        <section class="panel income-panel">
+          <div class="panel-head">
+            <div>
+              <h2>Presupuesto de Ingresos</h2>
+              <p id="income-panel-subtitle">Ingresos proyectados para este mes.</p>
+            </div>
+            <button class="secondary-btn compact" id="open-income-2">Editar ingresos</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fuente de Ingreso</th>
+                  <th>Proyectado</th>
+                  <th>% del total</th>
+                </tr>
+              </thead>
+              <tbody id="income-table-body"></tbody>
+              <tfoot>
+                <tr class="income-total-row">
+                  <td><strong>Total Ingresos</strong></td>
+                  <td><strong id="income-table-total">RD$0.00</strong></td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
         </section>
 
         <section class="panel">
@@ -257,6 +299,30 @@
             <button type="submit" class="primary-btn compact">Guardar gasto</button>
           </footer>
         </form>
+      </section>
+    </div>
+
+    <div class="modal-backdrop" id="income-modal" aria-hidden="true">
+      <section class="modal projection-modal" role="dialog" aria-modal="true" aria-labelledby="income-modal-title">
+        <header>
+          <div>
+            <h2 id="income-modal-title">Presupuesto de Ingresos</h2>
+            <p>¿Cuánto esperas recibir por cada fuente este mes?</p>
+          </div>
+          <button class="icon-btn" id="close-income" title="Cerrar"><i data-lucide="x"></i></button>
+        </header>
+        <div class="modal-summary">
+          <label>Mes <input type="month" id="income-month" /></label>
+          <div><span>Total proyectado</span><strong id="income-modal-total">RD$0.00</strong></div>
+        </div>
+        <div class="projection-form" id="income-form"></div>
+        <footer>
+          <span id="income-count">0 fuentes con ingreso</span>
+          <div>
+            <button class="secondary-btn compact" id="cancel-income">Cancelar</button>
+            <button class="primary-btn compact" id="save-income">Guardar ingresos</button>
+          </div>
+        </footer>
       </section>
     </div>
 

@@ -77,6 +77,17 @@ const CATEGORY_NAME_FALLBACKS = {
   Uncategorized: "Sin categoría"
 };
 
+const DEFAULT_INCOME_CATEGORIES = [
+  { slug: "salary",           name: "Ingreso por Salario",                          color: "#4487ff", icon: "briefcase" },
+  { slug: "rental-house-apt", name: "Ingreso por Alquiler de Casa y Apartamento",   color: "#28c987", icon: "home" },
+  { slug: "rental-commercial",name: "Ingreso por Alquiler del Local Comercial (La Ferretería)", color: "#ffc640", icon: "store" },
+  { slug: "per-diem",         name: "Ingreso por Viático",                          color: "#27c6d8", icon: "car" },
+  { slug: "special-bonus",    name: "Ingreso por Bono Especial",                    color: "#f66aa0", icon: "gift" },
+  { slug: "professional-fees",name: "Ingreso por Honorarios Profesionales",         color: "#9c5cff", icon: "award" },
+  { slug: "book-royalty",     name: "Regalía de Libro",                             color: "#ff834d", icon: "book-open" },
+  { slug: "other-income",     name: "Otros Ingresos",                               color: "#98a2b3", icon: "plus-circle" }
+];
+
 const TEMP_AUTH_KEY = "jardi_temp_admin_login_v2";
 const TEMP_DATA_KEY = "jardi_temp_admin_empty_data_v2";
 const TEMP_CREDENTIALS = {
@@ -103,6 +114,8 @@ const app = {
   categories: [],
   expenses: [],
   projections: [],
+  incomeProjections: [],
+  incomeMonth: monthKey(new Date()),
   trajectoryMeta: null,
   sixMonthMeta: null
 };
@@ -207,6 +220,20 @@ function bindEvents() {
   });
   document.getElementById("projection-form").addEventListener("input", handleProjectionAmountInput);
   document.getElementById("save-projections").addEventListener("click", saveProjections);
+
+  document.getElementById("open-income").addEventListener("click", openIncomeModal);
+  document.getElementById("open-income-2").addEventListener("click", openIncomeModal);
+  document.getElementById("close-income").addEventListener("click", closeIncomeModal);
+  document.getElementById("cancel-income").addEventListener("click", closeIncomeModal);
+  document.getElementById("income-modal").addEventListener("click", (event) => {
+    if (event.target.id === "income-modal") closeIncomeModal();
+  });
+  document.getElementById("income-month").addEventListener("change", (event) => {
+    app.incomeMonth = event.target.value || monthKey(new Date());
+    renderIncomeForm();
+  });
+  document.getElementById("income-form").addEventListener("input", handleIncomeAmountInput);
+  document.getElementById("save-income").addEventListener("click", saveIncomeProjections);
 
   document.getElementById("close-expense").addEventListener("click", closeExpenseModal);
   document.getElementById("cancel-expense").addEventListener("click", closeExpenseModal);
@@ -379,10 +406,11 @@ async function loadApp(manual = false) {
 
   try {
     await ensureDefaults();
-    const [categories, expenses, projections] = await Promise.all([
+    const [categories, expenses, projections, incomeProjections] = await Promise.all([
       app.supabase.from("expense_categories").select("*").eq("is_active", true).order("sort_order"),
       app.supabase.from("expenses").select("*, expense_categories(name, slug, color)").order("spent_at", { ascending: false }),
-      app.supabase.from("monthly_projections").select("*")
+      app.supabase.from("monthly_projections").select("*"),
+      app.supabase.from("monthly_income_projections").select("*")
     ]);
 
     if (categories.error) throw categories.error;
@@ -392,6 +420,7 @@ async function loadApp(manual = false) {
     app.categories = categories.data || [];
     app.expenses = normalizeExpenses(expenses.data || []);
     app.projections = projections.data || [];
+    app.incomeProjections = (incomeProjections.data || []);
     populateExpenseCategorySelect();
     app.supabaseUnavailable = false;
     showDashboard();
@@ -618,9 +647,17 @@ function renderDashboard() {
   const usedPercent = projected ? Math.round((monthTotal / projected) * 100) : 0;
   const forecast = calculateForecast(monthTotal, projected);
 
+  const incomeTotal = getMonthIncomeTotal(app.projectionMonth);
+  const balance = incomeTotal - monthTotal;
+
   document.getElementById("outflow-total").textContent = money(total);
   document.getElementById("projection-used").textContent = `${usedPercent}%`;
   document.getElementById("projection-copy").textContent = `${money(monthTotal)} de ${money(projected)} este mes`;
+  document.getElementById("income-total").textContent = money(incomeTotal);
+  document.getElementById("income-copy").textContent = incomeTotal > 0 ? `${DEFAULT_INCOME_CATEGORIES.filter(c => getIncomeAmount(c.slug, app.projectionMonth) > 0).length} fuente(s) este mes` : "Sin ingresos definidos";
+  document.getElementById("balance-total").textContent = money(Math.abs(balance));
+  document.getElementById("balance-total").style.color = balance >= 0 ? "var(--green)" : "var(--red)";
+  document.getElementById("balance-copy").textContent = balance >= 0 ? `Superávit de ${money(balance)}` : `Déficit de ${money(Math.abs(balance))}`;
   document.getElementById("mtd-spent").textContent = money(monthTotal);
   document.getElementById("pace-copy").textContent = forecast.delta >= 0
     ? `${money(forecast.delta)} por debajo del ritmo`
@@ -639,6 +676,7 @@ function renderDashboard() {
   renderCategoryTable(periodExpenses, range);
   renderCategoryPills();
   renderTransactions();
+  renderIncomePanel();
   refreshIcons();
 }
 
@@ -1372,4 +1410,126 @@ function showToast(message) {
 
 function refreshIcons() {
   if (window.lucide) window.lucide.createIcons();
+}
+
+// ─── INCOME PROJECTIONS ───────────────────────────────────────────────────────
+
+function getIncomeAmount(slug, month) {
+  const monthDate = `${month}-01`;
+  const row = app.incomeProjections.find(r => r.income_slug === slug && r.month === monthDate);
+  return row ? Number(row.projected_amount) : 0;
+}
+
+function getMonthIncomeTotal(month) {
+  return DEFAULT_INCOME_CATEGORIES.reduce((sum, cat) => sum + getIncomeAmount(cat.slug, month), 0);
+}
+
+function openIncomeModal() {
+  app.incomeMonth = app.projectionMonth;
+  document.getElementById("income-month").value = app.incomeMonth;
+  renderIncomeForm();
+  document.getElementById("income-modal").classList.add("open");
+  document.getElementById("income-modal").setAttribute("aria-hidden", "false");
+}
+
+function closeIncomeModal() {
+  document.getElementById("income-modal").classList.remove("open");
+  document.getElementById("income-modal").setAttribute("aria-hidden", "true");
+}
+
+function renderIncomeForm() {
+  const form = document.getElementById("income-form");
+  let total = 0;
+  let filled = 0;
+  form.innerHTML = DEFAULT_INCOME_CATEGORIES.map(cat => {
+    const amount = getIncomeAmount(cat.slug, app.incomeMonth);
+    if (amount > 0) filled++;
+    total += amount;
+    return `<div class="projection-row">
+      <label for="income-${cat.slug}">
+        <span class="cat-dot" style="background:${cat.color}"></span>
+        ${escapeHtml(cat.name)}
+      </label>
+      <input id="income-${cat.slug}" type="text" inputmode="numeric" autocomplete="off"
+        value="${amount ? compactNumber.format(amount) : ''}"
+        placeholder="0.00"
+        data-income-slug="${cat.slug}" />
+    </div>`;
+  }).join("");
+  document.getElementById("income-modal-total").textContent = money(total);
+  document.getElementById("income-count").textContent = `${filled} de ${DEFAULT_INCOME_CATEGORIES.length} fuentes con ingreso`;
+}
+
+function handleIncomeAmountInput(event) {
+  const input = event.target;
+  if (!input.dataset.incomeSlug) return;
+  const raw = input.value.replace(/,/g, "").trim();
+  const isTypingDecimal = raw.endsWith(".") || /\.\d{0,1}$/.test(raw);
+  if (!isTypingDecimal) {
+    const val = parseAmountInput(input.value);
+    input.value = val ? compactNumber.format(val) : "";
+  }
+  let total = 0;
+  document.querySelectorAll("[data-income-slug]").forEach(inp => {
+    total += parseAmountInput(inp.value);
+  });
+  let filled = 0;
+  document.querySelectorAll("[data-income-slug]").forEach(inp => {
+    if (parseAmountInput(inp.value) > 0) filled++;
+  });
+  document.getElementById("income-modal-total").textContent = money(total);
+  document.getElementById("income-count").textContent = `${filled} de ${DEFAULT_INCOME_CATEGORIES.length} fuentes con ingreso`;
+}
+
+async function saveIncomeProjections() {
+  const selectedMonth = document.getElementById("income-month").value || app.incomeMonth;
+  const monthDate = `${selectedMonth}-01`;
+  const rows = DEFAULT_INCOME_CATEGORIES.map(cat => ({
+    income_slug: cat.slug,
+    projected_amount: parseAmountInput(document.getElementById(`income-${cat.slug}`)?.value || "0"),
+    month: monthDate
+  })).filter(r => r.projected_amount > 0);
+
+  if (app.demoMode || app.supabaseUnavailable) {
+    app.incomeProjections = app.incomeProjections.filter(r => r.month !== monthDate);
+    rows.forEach(r => app.incomeProjections.push({ ...r, id: `demo-${crypto.randomUUID()}`, user_id: "demo-user" }));
+    app.incomeMonth = selectedMonth;
+    closeIncomeModal();
+    renderDashboard();
+    showToast("Ingresos guardados.");
+    return;
+  }
+
+  if (!app.session?.user?.id) return;
+  // Borrar los del mes y reinsertar
+  await app.supabase.from("monthly_income_projections").delete().eq("user_id", app.session.user.id).eq("month", monthDate);
+  if (rows.length > 0) {
+    const payload = rows.map(r => ({ ...r, user_id: app.session.user.id }));
+    const { error } = await app.supabase.from("monthly_income_projections").insert(payload);
+    if (error) { showToast(error.message); return; }
+  }
+  app.incomeMonth = selectedMonth;
+  await loadApp();
+  closeIncomeModal();
+  showToast("Ingresos guardados correctamente.");
+}
+
+function renderIncomePanel() {
+  const tbody = document.getElementById("income-table-body");
+  if (!tbody) return;
+  const month = app.projectionMonth;
+  const total = getMonthIncomeTotal(month);
+  tbody.innerHTML = DEFAULT_INCOME_CATEGORIES.map(cat => {
+    const amount = getIncomeAmount(cat.slug, month);
+    if (amount === 0) return "";
+    const pct = total > 0 ? ((amount / total) * 100).toFixed(1) : "0.0";
+    return `<tr>
+      <td><span class="cat-dot" style="background:${cat.color}"></span> ${escapeHtml(cat.name)}</td>
+      <td>${money(amount)}</td>
+      <td>${pct}%</td>
+    </tr>`;
+  }).filter(Boolean).join("") || `<tr><td colspan="3" style="text-align:center;color:var(--muted);padding:1.5rem">Sin ingresos definidos — haz clic en "Editar ingresos" para agregar.</td></tr>`;
+  document.getElementById("income-table-total").textContent = money(total);
+  const subtitle = document.getElementById("income-panel-subtitle");
+  if (subtitle) subtitle.textContent = `Ingresos proyectados para ${labelForMonth(month)}.`;
 }
