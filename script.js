@@ -1463,7 +1463,7 @@ function renderIncomeForm() {
         <span class="cat-dot" style="background:${cat.color}"></span>
         ${escapeHtml(cat.name)}
       </label>
-      <input id="income-${cat.slug}" type="number" inputmode="decimal" autocomplete="off" min="0" step="0.01"
+      <input id="income-${cat.slug}" type="text" inputmode="decimal" autocomplete="off"
         value="${amount ? amount : ''}"
         placeholder="0.00"
         data-income-slug="${cat.slug}" />
@@ -1476,24 +1476,37 @@ function renderIncomeForm() {
 function handleIncomeAmountInput(event) {
   const input = event.target;
   if (!input.dataset.incomeSlug) return;
-  // Solo actualizar totales mientras se escribe — NO reformatear el campo
+  // Permitir solo dígitos, punto y coma — eliminar cualquier otro carácter
+  const pos = input.selectionStart;
+  const cleaned = input.value.replace(/[^0-9.,]/g, "");
+  if (cleaned !== input.value) {
+    input.value = cleaned;
+    input.setSelectionRange(pos - 1, pos - 1);
+  }
   updateIncomeTotals();
 }
 
 function handleIncomeAmountBlur(event) {
   const input = event.target;
   if (!input.dataset.incomeSlug) return;
-  // Al salir del campo, formatear con 2 decimales
-  const val = parseAmountInput(input.value);
-  input.value = val ? compactNumber.format(val) : "";
+  // Al salir del campo formatea el valor final
+  const val = parseIncomeValue(input.value);
+  input.value = val > 0 ? val.toFixed(2) : "";
   updateIncomeTotals();
+}
+
+function parseIncomeValue(val) {
+  // Acepta: 50000 / 50,000 / 50000.50 / 50,000.50
+  const clean = String(val || "").replace(/,/g, "").trim();
+  const num = parseFloat(clean);
+  return isNaN(num) || num < 0 ? 0 : num;
 }
 
 function updateIncomeTotals() {
   let total = 0;
   let filled = 0;
   document.querySelectorAll("[data-income-slug]").forEach(inp => {
-    const val = parseAmountInput(inp.value);
+    const val = parseIncomeValue(inp.value);
     total += val;
     if (val > 0) filled++;
   });
@@ -1506,7 +1519,7 @@ async function saveIncomeProjections() {
   const monthDate = `${selectedMonth}-01`;
   const rows = DEFAULT_INCOME_CATEGORIES.map(cat => ({
     income_slug: cat.slug,
-    projected_amount: parseFloat(document.getElementById(`income-${cat.slug}`)?.value || "0") || 0,
+    projected_amount: parseIncomeValue(document.getElementById(`income-${cat.slug}`)?.value),
     month: monthDate
   })).filter(r => r.projected_amount > 0);
 
