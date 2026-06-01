@@ -176,6 +176,7 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--ink);min-hei
 <!-- TABS -->
 <div class="tabs">
   <div class="tab active" onclick="showTab('presupuesto',this)">💰 Presupuesto</div>
+  <div class="tab" onclick="showTab('proyeccion',this)">🎯 Proyección</div>
   <div class="tab" onclick="showTab('flujo',this)">📊 Flujo</div>
   <div class="tab" onclick="showTab('simulador',this)">🎮 Simulador</div>
   <div class="tab" onclick="showTab('inversion',this)">📈 Inversión</div>
@@ -206,6 +207,30 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--ink);min-hei
       <div class="kpi-v c-b" id="k-aho">0%</div>
       <div class="kpi-s">del ingreso</div>
     </div>
+  </div>
+
+  <!-- RESUMEN PROYECCIÓN VS REAL -->
+  <div id="dash-proy-panel" style="display:none;background:var(--ink);border-radius:14px;padding:1rem 1.2rem;margin-bottom:1rem">
+    <div style="font-size:11px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.6rem">🎯 Presupuesto vs. Real — <span id="dash-proy-mes"></span></div>
+    <div class="g4">
+      <div style="text-align:center">
+        <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:3px">ING. PROYECTADO</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;color:var(--green)" id="dash-pk-ip">—</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:3px">ING. REAL</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;color:var(--green)" id="dash-pk-ir">—</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:3px">GAS. PROYECTADO</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;color:var(--red)" id="dash-pk-gp">—</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:3px">GAS. REAL</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;color:var(--red)" id="dash-pk-gr">—</div>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:.6rem;font-size:12px;color:rgba(255,255,255,.5)">Ve a <strong style="color:var(--gold)">🎯 Proyección</strong> para definir o actualizar tu presupuesto mensual</div>
   </div>
 
   <div class="g2">
@@ -323,6 +348,96 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--ink);min-hei
       <div id="chart-5030"></div>
     </div>
   </div>
+</div>
+
+<!-- ══════ PROYECCIÓN ══════ -->
+<div class="panel" id="panel-proyeccion">
+
+  <!-- Selector de mes -->
+  <div class="card" style="margin-bottom:1rem">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem">
+      <div>
+        <div class="ct" style="margin-bottom:.2rem">🎯 Presupuesto vs. Real</div>
+        <div style="font-size:13px;color:var(--mgray)">Define tu presupuesto mensual y compáralo con lo registrado</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:.5rem">
+        <label style="font-size:13px;font-weight:700;color:var(--dgray)">Mes:</label>
+        <input type="month" id="proy-mes" style="padding:8px 12px;border:1.5px solid #DDD8CC;border-radius:8px;font-size:14px;font-family:'Lato',sans-serif;color:var(--ink);background:var(--white)" onchange="renderProyeccion()"/>
+        <button class="btn btn-gold btn-sm" onclick="saveProyeccion()">Guardar presupuesto</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPIs comparación -->
+  <div class="g4" style="margin-bottom:1rem" id="proy-kpis">
+    <div class="kpi" style="border-top:3px solid var(--green)">
+      <div class="kpi-l">Ingresos Proyectados</div>
+      <div class="kpi-v c-g" id="pk-ing-proy">RD$0</div>
+    </div>
+    <div class="kpi" style="border-top:3px solid #43A047">
+      <div class="kpi-l">Ingresos Reales</div>
+      <div class="kpi-v c-g" id="pk-ing-real">RD$0</div>
+      <div class="kpi-s" id="pk-ing-diff">—</div>
+    </div>
+    <div class="kpi" style="border-top:3px solid var(--red)">
+      <div class="kpi-l">Gastos Proyectados</div>
+      <div class="kpi-v c-r" id="pk-gas-proy">RD$0</div>
+    </div>
+    <div class="kpi" style="border-top:3px solid #E53935">
+      <div class="kpi-l">Gastos Reales</div>
+      <div class="kpi-v c-r" id="pk-gas-real">RD$0</div>
+      <div class="kpi-s" id="pk-gas-diff">—</div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <!-- PRESUPUESTO INGRESOS -->
+    <div class="card">
+      <div class="ct">💚 Presupuesto de Ingresos</div>
+      <div id="proy-ing-form"></div>
+      <div style="border-top:1px solid var(--lgray);margin-top:.75rem;padding-top:.65rem;display:flex;justify-content:space-between;font-size:14px;font-weight:700">
+        <span>Total proyectado</span>
+        <span id="proy-ing-total" style="color:var(--green)">RD$0</span>
+      </div>
+    </div>
+
+    <!-- PRESUPUESTO GASTOS -->
+    <div class="card">
+      <div class="ct">🔴 Presupuesto de Gastos</div>
+      <div id="proy-gas-form"></div>
+      <div style="border-top:1px solid var(--lgray);margin-top:.75rem;padding-top:.65rem;display:flex;justify-content:space-between;font-size:14px;font-weight:700">
+        <span>Total proyectado</span>
+        <span id="proy-gas-total" style="color:var(--red)">RD$0</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABLA COMPARACIÓN INGRESOS -->
+  <div class="card">
+    <div class="ct">📊 Comparación Ingresos — Proyectado vs. Real</div>
+    <div id="proy-tabla-ing"></div>
+  </div>
+
+  <!-- TABLA COMPARACIÓN GASTOS -->
+  <div class="card">
+    <div class="ct">📊 Comparación Gastos — Proyectado vs. Real</div>
+    <div id="proy-tabla-gas"></div>
+  </div>
+
+  <!-- BALANCE FINAL -->
+  <div class="card" id="proy-balance-card" style="background:var(--ink);border:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem">
+      <div>
+        <div style="font-size:11px;letter-spacing:.08em;color:rgba(255,255,255,.4);text-transform:uppercase">Balance del Mes</div>
+        <div style="display:flex;gap:1.5rem;margin-top:.5rem">
+          <div><div style="font-size:11px;color:rgba(255,255,255,.4)">Proyectado</div><div id="proy-bal-proy" style="font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;color:var(--gold)">RD$0</div></div>
+          <div><div style="font-size:11px;color:rgba(255,255,255,.4)">Real</div><div id="proy-bal-real" style="font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;color:var(--gold)">RD$0</div></div>
+        </div>
+      </div>
+      <div id="proy-alerta" style="font-size:13px;max-width:280px;line-height:1.5"></div>
+    </div>
+  </div>
+
 </div>
 
 <!-- ══════ FLUJO ══════ -->
@@ -527,13 +642,16 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--ink);min-hei
 // ══ ESTADO ══════════════════════════════════════════════════════════
 var txData   = [];
 var portData = [];
+var proyData = {}; // { "2026-06": { ing: {cat: monto}, gas: {cat: monto} } }
 try{ txData   = JSON.parse(localStorage.getItem('sclf2_tx')   ||'[]'); }catch(e){}
 try{ portData = JSON.parse(localStorage.getItem('sclf2_port') ||'[]'); }catch(e){}
+try{ proyData = JSON.parse(localStorage.getItem('sclf2_proy') ||'{}'); }catch(e){}
 
 function save(){
   try{
     localStorage.setItem('sclf2_tx',   JSON.stringify(txData));
     localStorage.setItem('sclf2_port', JSON.stringify(portData));
+    localStorage.setItem('sclf2_proy', JSON.stringify(proyData));
   }catch(e){}
 }
 
@@ -604,6 +722,7 @@ function showTab(id, el){
   // Render on demand
   if(id==='presupuesto'){ renderTx(); renderChartCats(); renderChart5030(); }
   if(id==='flujo'){ renderFlujo(); }
+  if(id==='proyeccion'){ renderProyeccion(); }
   if(id==='simulador'){ runSim(); }
   if(id==='inversion'){ renderPort(); }
   if(id==='sistema'){ renderPilares(); renderNiveles(); }
@@ -630,6 +749,26 @@ function updateKPIs(){
   setText('fl-ing', fmt(ing));
   setText('fl-gas', fmt(gas));
   setText('fl-net', fmt(bal));
+
+  // Panel proyección en dashboard
+  var mesDash = new Date().toISOString().slice(0,7);
+  var proyMes = proyData[mesDash];
+  var dashPanel = document.getElementById('dash-proy-panel');
+  if(dashPanel && proyMes){
+    dashPanel.style.display='block';
+    var iproy=0, gproy=0;
+    OPS.ingreso.forEach(function(c){ iproy+=(proyMes.ing[c]||0); });
+    OPS.gasto.forEach(function(c){   gproy+=(proyMes.gas[c]||0); });
+    setText('dash-proy-mes', mesDash);
+    setText('dash-pk-ip', fmt(iproy));
+    setText('dash-pk-ir', fmt(ing));
+    setText('dash-pk-gp', fmt(gproy));
+    setText('dash-pk-gr', fmt(gas));
+    var irEl=document.getElementById('dash-pk-ir');
+    var grEl=document.getElementById('dash-pk-gr');
+    if(irEl) irEl.style.color = ing>=iproy?'var(--green)':'var(--red)';
+    if(grEl) grEl.style.color = gas<=gproy?'var(--green)':'var(--red)';
+  } else if(dashPanel){ dashPanel.style.display='none'; }
 }
 
 function setText(id, val){
@@ -1055,7 +1194,171 @@ document.addEventListener('DOMContentLoaded', function(){
   renderChart5030();
   renderPilares();
   renderNiveles();
+
+  // Inicializar mes en proyección
+  var hoyMes = new Date().toISOString().slice(0,7);
+  var mesEl = document.getElementById('proy-mes');
+  if(mesEl) mesEl.value = hoyMes;
 });
+
+// ══ PROYECCIÓN ═══════════════════════════════════════════════════════
+
+function getMesProy(){
+  var el = document.getElementById('proy-mes');
+  return el ? el.value : new Date().toISOString().slice(0,7);
+}
+
+function fmtRD(n){ return 'RD$'+Number(n||0).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0}); }
+
+function saveProyeccion(){
+  var mes = getMesProy();
+  if(!proyData[mes]) proyData[mes] = {ing:{}, gas:{}};
+
+  OPS.ingreso.forEach(function(cat){
+    var el = document.getElementById('ping-'+cat.replace(/[^a-z0-9]/gi,'_'));
+    var val = parseFloat(el ? el.value : 0)||0;
+    proyData[mes].ing[cat] = val;
+  });
+  OPS.gasto.forEach(function(cat){
+    var el = document.getElementById('pgas-'+cat.replace(/[^a-z0-9]/gi,'_'));
+    var val = parseFloat(el ? el.value : 0)||0;
+    proyData[mes].gas[cat] = val;
+  });
+  save();
+  renderProyeccion();
+  alert('✅ Presupuesto de '+mes+' guardado correctamente.');
+}
+
+function renderProyeccion(){
+  var mes = getMesProy();
+  var proy = proyData[mes] || {ing:{}, gas:{}};
+
+  // Transacciones del mes seleccionado
+  var txMes = txData.filter(function(t){ return t.fecha && t.fecha.slice(0,7)===mes; });
+  var ingReal = txMes.filter(function(t){ return t.tipo==='ingreso'; });
+  var gasReal = txMes.filter(function(t){ return t.tipo==='gasto'; });
+
+  // ── FORMULARIO INGRESOS ──
+  var ingForm = document.getElementById('proy-ing-form');
+  var totalIngProy = 0;
+  ingForm.innerHTML = OPS.ingreso.map(function(cat){
+    var id = 'ping-'+cat.replace(/[^a-z0-9]/gi,'_');
+    var val = proy.ing[cat]||0;
+    if(val) totalIngProy += val;
+    return '<div class="fl" style="margin-bottom:.5rem">'
+      +'<label style="font-size:11px">'+cat+'</label>'
+      +'<input type="number" id="'+id+'" value="'+(val||'')+'" placeholder="0" inputmode="decimal" min="0" step="0.01"'
+      +' oninput="recalcProyTotals()" style="padding:8px 10px;border:1.5px solid #DDD8CC;border-radius:8px;font-size:14px;width:100%"/>'
+      +'</div>';
+  }).join('');
+  document.getElementById('proy-ing-total').textContent = fmtRD(totalIngProy);
+
+  // ── FORMULARIO GASTOS ──
+  var gasForm = document.getElementById('proy-gas-form');
+  var totalGasProy = 0;
+  gasForm.innerHTML = OPS.gasto.map(function(cat){
+    var id = 'pgas-'+cat.replace(/[^a-z0-9]/gi,'_');
+    var val = proy.gas[cat]||0;
+    if(val) totalGasProy += val;
+    return '<div class="fl" style="margin-bottom:.5rem">'
+      +'<label style="font-size:11px">'+cat+'</label>'
+      +'<input type="number" id="'+id+'" value="'+(val||'')+'" placeholder="0" inputmode="decimal" min="0" step="0.01"'
+      +' oninput="recalcProyTotals()" style="padding:8px 10px;border:1.5px solid #DDD8CC;border-radius:8px;font-size:14px;width:100%"/>'
+      +'</div>';
+  }).join('');
+  document.getElementById('proy-gas-total').textContent = fmtRD(totalGasProy);
+
+  // ── TOTALES REALES ──
+  var totalIngReal = ingReal.reduce(function(s,t){ return s+t.monto; },0);
+  var totalGasReal = gasReal.reduce(function(s,t){ return s+t.monto; },0);
+
+  // ── KPIs ──
+  setText('pk-ing-proy', fmtRD(totalIngProy));
+  setText('pk-ing-real', fmtRD(totalIngReal));
+  var diffIng = totalIngReal - totalIngProy;
+  var diffIngEl = document.getElementById('pk-ing-diff');
+  if(diffIngEl){ diffIngEl.textContent = (diffIng>=0?'▲ ':'▼ ')+fmtRD(Math.abs(diffIng))+(diffIng>=0?' sobre lo esperado':' por debajo'); diffIngEl.style.color = diffIng>=0?'var(--green)':'var(--red)'; }
+
+  setText('pk-gas-proy', fmtRD(totalGasProy));
+  setText('pk-gas-real', fmtRD(totalGasReal));
+  var diffGas = totalGasReal - totalGasProy;
+  var diffGasEl = document.getElementById('pk-gas-diff');
+  if(diffGasEl){ diffGasEl.textContent = (diffGas<=0?'✅ ':'⚠ ')+fmtRD(Math.abs(diffGas))+(diffGas<=0?' dentro del límite':' sobre el presupuesto'); diffGasEl.style.color = diffGas<=0?'var(--green)':'var(--red)'; }
+
+  // ── TABLA INGRESOS ──
+  var tblIng = document.getElementById('proy-tabla-ing');
+  var rowsIng = OPS.ingreso.map(function(cat){
+    var proyVal = proy.ing[cat]||0;
+    var realVal = ingReal.filter(function(t){ return t.desc===cat; }).reduce(function(s,t){ return s+t.monto; },0);
+    if(!proyVal && !realVal) return '';
+    var diff = realVal - proyVal;
+    var pct = proyVal>0 ? Math.min(Math.round((realVal/proyVal)*100),999) : (realVal>0?100:0);
+    var col = diff>=0?'var(--green)':'var(--red)';
+    var barW = proyVal>0 ? Math.min(pct,100) : (realVal>0?100:0);
+    return '<div style="margin-bottom:.65rem">'
+      +'<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">'
+      +'<span style="font-weight:600">'+cat+'</span>'
+      +'<span>Proy: <strong>'+fmtRD(proyVal)+'</strong> &nbsp; Real: <strong style="color:'+col+'">'+fmtRD(realVal)+'</strong> &nbsp; <small style="color:'+col+'">'+(diff>=0?'+':'')+fmtRD(diff)+'</small></span>'
+      +'</div>'
+      +'<div class="pbar"><div class="pfill" style="width:'+barW+'%;background:'+col+'"></div></div>'
+      +'<div style="font-size:11px;color:var(--mgray);margin-top:2px">'+pct+'% del proyectado</div>'
+      +'</div>';
+  }).filter(Boolean).join('');
+  tblIng.innerHTML = rowsIng || '<div class="empty">Sin proyección de ingresos para este mes. Ingresa los valores arriba y guarda.</div>';
+
+  // ── TABLA GASTOS ──
+  var tblGas = document.getElementById('proy-tabla-gas');
+  var rowsGas = OPS.gasto.map(function(cat){
+    var proyVal = proy.gas[cat]||0;
+    var realVal = gasReal.filter(function(t){ return t.desc===cat; }).reduce(function(s,t){ return s+t.monto; },0);
+    if(!proyVal && !realVal) return '';
+    var diff = realVal - proyVal;
+    var pct = proyVal>0 ? Math.min(Math.round((realVal/proyVal)*100),999) : (realVal>0?100:0);
+    var col = diff<=0?'var(--green)':'var(--red)';
+    var barW = proyVal>0 ? Math.min(pct,100) : (realVal>0?100:0);
+    return '<div style="margin-bottom:.65rem">'
+      +'<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">'
+      +'<span style="font-weight:600">'+cat+'</span>'
+      +'<span>Proy: <strong>'+fmtRD(proyVal)+'</strong> &nbsp; Real: <strong style="color:'+col+'">'+fmtRD(realVal)+'</strong> &nbsp; <small style="color:'+col+'">'+(diff>0?'+':'')+fmtRD(diff)+'</small></span>'
+      +'</div>'
+      +'<div class="pbar"><div class="pfill" style="width:'+barW+'%;background:'+(diff<=0?'var(--green)':'var(--red)')+'"></div></div>'
+      +'<div style="font-size:11px;color:var(--mgray);margin-top:2px">'+pct+'% del presupuesto'+(diff>0?' ⚠ Excedido':'')+'</div>'
+      +'</div>';
+  }).filter(Boolean).join('');
+  tblGas.innerHTML = rowsGas || '<div class="empty">Sin presupuesto de gastos para este mes. Ingresa los valores arriba y guarda.</div>';
+
+  // ── BALANCE ──
+  var balProy = totalIngProy - totalGasProy;
+  var balReal = totalIngReal - totalGasReal;
+  var bpEl = document.getElementById('proy-bal-proy');
+  var brEl = document.getElementById('proy-bal-real');
+  if(bpEl){ bpEl.textContent = fmtRD(Math.abs(balProy)); bpEl.style.color = balProy>=0?'var(--green)':'var(--red)'; }
+  if(brEl){ brEl.textContent = fmtRD(Math.abs(balReal)); brEl.style.color = balReal>=0?'var(--green)':'var(--red)'; }
+
+  var alerta = document.getElementById('proy-alerta');
+  if(alerta){
+    var msgs = [];
+    if(balProy<0) msgs.push('⚠️ Presupuesto con déficit de '+fmtRD(Math.abs(balProy))+' — ajusta tus gastos proyectados.');
+    if(balReal<0) msgs.push('🚨 Balance real negativo: '+fmtRD(Math.abs(balReal))+' — gastas más de lo que ingresas.');
+    if(balReal>=0 && totalIngReal>0) msgs.push('✅ Balance real positivo de '+fmtRD(balReal)+'. ¡Vas bien!');
+    if(diffGas>0) msgs.push('📌 Llevas '+fmtRD(diffGas)+' sobre el presupuesto de gastos.');
+    alerta.innerHTML = msgs.map(function(m){ return '<div style="margin-bottom:.4rem;color:rgba(255,255,255,.8)">'+m+'</div>'; }).join('');
+  }
+}
+
+function recalcProyTotals(){
+  var totalIng=0, totalGas=0;
+  OPS.ingreso.forEach(function(cat){
+    var el=document.getElementById('ping-'+cat.replace(/[^a-z0-9]/gi,'_'));
+    totalIng += parseFloat(el?el.value:0)||0;
+  });
+  OPS.gasto.forEach(function(cat){
+    var el=document.getElementById('pgas-'+cat.replace(/[^a-z0-9]/gi,'_'));
+    totalGas += parseFloat(el?el.value:0)||0;
+  });
+  setText('proy-ing-total', fmtRD(totalIng));
+  setText('proy-gas-total', fmtRD(totalGas));
+}
 </script>
 </body>
 </html>
