@@ -1240,13 +1240,20 @@ function formatAmountInput(value) {
 }
 
 function parseAmountInput(value) {
-  const digits = String(value || "").replace(/\D/g, "");
-  return digits ? Number(digits) : 0;
+  const str = String(value || "").replace(/,/g, "").trim();
+  const num = parseFloat(str);
+  return isNaN(num) ? 0 : num;
 }
 
 function formatAmountField(input) {
+  const raw = input.value.replace(/,/g, "").trim();
+  const isTypingDecimal = raw.endsWith(".") || /\.\d{0,1}$/.test(raw);
+  if (isTypingDecimal) {
+    input.dataset.rawValue = String(parseAmountInput(raw));
+    return;
+  }
   const cursor = input.selectionStart || 0;
-  const digitsBeforeCursor = input.value.slice(0, cursor).replace(/\D/g, "").length;
+  const digitsBeforeCursor = input.value.slice(0, cursor).replace(/[^\d.]/g, "").length;
   const hasDigits = /\d/.test(input.value);
   input.value = hasDigits ? formatAmountInput(parseAmountInput(input.value)) : "";
   input.dataset.rawValue = String(parseAmountInput(input.value));
