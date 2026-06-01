@@ -225,14 +225,13 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--ink);min-hei
         <label>Descripción / Concepto</label>
         <select id="tx-desc">
           <option value="">— Selecciona —</option>
-          <option>Salario / Sueldo</option>
-          <option>Negocio propio</option>
-          <option>Inversiones</option>
-          <option>Freelance / Consultoría</option>
-          <option>Renta de propiedad</option>
-          <option>Bono o comisión</option>
-          <option>Dividendos</option>
-          <option>Otro ingreso</option>
+          <option>Ingreso por Salario</option>
+          <option>Alquiler de Casa y Apartamento</option>
+          <option>Alquiler Propiedad Comercial (Ferretería)</option>
+          <option>Ingreso por Regalía Libro</option>
+          <option>Ingreso por Honorarios</option>
+          <option>Ingreso por Interés Banco</option>
+          <option>Otros Ingresos</option>
         </select>
       </div>
 
@@ -510,35 +509,42 @@ function save(){
 // ══ OPCIONES POR TIPO ════════════════════════════════════════════════
 var OPS = {
   ingreso:[
-    'Salario / Sueldo','Negocio propio','Inversiones',
-    'Freelance / Consultoría','Renta de propiedad',
-    'Bono o comisión','Dividendos','Ventas','Transferencia recibida','Otro ingreso'
+    'Ingreso por Salario',
+    'Alquiler de Casa y Apartamento',
+    'Alquiler Propiedad Comercial (Ferretería)',
+    'Ingreso por Regalía Libro',
+    'Ingreso por Honorarios',
+    'Ingreso por Interés Banco',
+    'Otros Ingresos'
   ],
   gasto:[
-    'Alquiler / Hipoteca','Alimentación / Supermercado','Restaurantes / Comida fuera',
-    'Transporte / Combustible','Agua','Luz / Electricidad','Internet / Teléfono',
-    'Salud / Médico / Farmacia','Educación / Cursos','Ropa / Calzado',
-    'Entretenimiento / Ocio','Viajes','Seguros','Deuda / Préstamo',
-    'Ahorro / Inversión','Gastos del hogar','Belleza / Cuidado personal',
-    'Suscripciones','Regalos / Donaciones','Negocio / Trabajo','Otro gasto'
+    'Gasto de Alquiler',
+    'Alimento Supermercado',
+    'Comida Rápida / Restaurante',
+    'Visita a Familiares',
+    'Hotel y Resort en RD',
+    'Viaje al Extranjero y Alojamiento',
+    'Diversión (Disco y Billar)',
+    'Otros Gastos'
   ]
 };
 
 var CAT_COL = {
-  'Salario / Sueldo':'#1B8A4C','Negocio propio':'#2E7D32','Inversiones':'#43A047',
-  'Freelance / Consultoría':'#66BB6A','Renta de propiedad':'#4CAF50',
-  'Bono o comisión':'#81C784','Dividendos':'#A5D6A7','Ventas':'#1B8A4C',
-  'Transferencia recibida':'#388E3C','Otro ingreso':'#C8E6C9',
-  'Alquiler / Hipoteca':'#C0392B','Alimentación / Supermercado':'#E53935',
-  'Restaurantes / Comida fuera':'#E91E63','Transporte / Combustible':'#FF5722',
-  'Agua':'#1565C0','Luz / Electricidad':'#FFA000','Internet / Teléfono':'#7B1FA2',
-  'Salud / Médico / Farmacia':'#0097A7','Educación / Cursos':'#1565C0',
-  'Ropa / Calzado':'#9C27B0','Entretenimiento / Ocio':'#673AB7',
-  'Viajes':'#00796B','Seguros':'#455A64','Deuda / Préstamo':'#BF360C',
-  'Ahorro / Inversión':'#1B8A4C','Gastos del hogar':'#795548',
-  'Belleza / Cuidado personal':'#F06292','Suscripciones':'#5C6BC0',
-  'Regalos / Donaciones':'#EF5350','Negocio / Trabajo':'#546E7A',
-  'Otro gasto':'#90A4AE'
+  'Ingreso por Salario':'#1B8A4C',
+  'Alquiler de Casa y Apartamento':'#2E7D32',
+  'Alquiler Propiedad Comercial (Ferretería)':'#C9A84C',
+  'Ingreso por Regalía Libro':'#FF834D',
+  'Ingreso por Honorarios':'#9C5CFF',
+  'Ingreso por Interés Banco':'#1A56DB',
+  'Otros Ingresos':'#66BB6A',
+  'Gasto de Alquiler':'#C0392B',
+  'Alimento Supermercado':'#E53935',
+  'Comida Rápida / Restaurante':'#E91E63',
+  'Visita a Familiares':'#00796B',
+  'Hotel y Resort en RD':'#0097A7',
+  'Viaje al Extranjero y Alojamiento':'#1565C0',
+  'Diversión (Disco y Billar)':'#673AB7',
+  'Otros Gastos':'#90A4AE'
 };
 
 function updateDescOptions(){
@@ -684,7 +690,7 @@ function renderChart5030(){
   var gas = txData.filter(function(t){ return t.tipo==='gasto'; }).reduce(function(s,t){ return s+t.monto; },0);
   if(!ing){ el.innerHTML='<div class="empty">Registra ingresos para ver el análisis.</div>'; return; }
 
-  var ESENCIALES = ['Alquiler / Hipoteca','Alimentación / Supermercado','Transporte / Combustible','Agua','Luz / Electricidad','Salud / Médico / Farmacia'];
+  var ESENCIALES = ['Gasto de Alquiler','Alimento Supermercado','Comida Rápida / Restaurante'];
   var gasE = txData.filter(function(t){ return t.tipo==='gasto' && ESENCIALES.indexOf(t.desc)>=0; }).reduce(function(s,t){ return s+t.monto; },0);
   var gasV = gas - gasE;
   var aho  = Math.max(0, ing - gas);
@@ -737,7 +743,7 @@ function renderFlujo(){
   var gas = txData.filter(function(t){ return t.tipo==='gasto'; }).reduce(function(s,t){ return s+t.monto; },0);
 
   // Regla
-  var ESENCIALES = ['Alquiler / Hipoteca','Alimentación / Supermercado','Transporte / Combustible','Agua','Luz / Electricidad','Salud / Médico / Farmacia'];
+  var ESENCIALES = ['Gasto de Alquiler','Alimento Supermercado','Comida Rápida / Restaurante'];
   var gasE = txData.filter(function(t){ return t.tipo==='gasto' && ESENCIALES.indexOf(t.desc)>=0; }).reduce(function(s,t){ return s+t.monto; },0);
   var gasV = gas - gasE;
   var aho  = Math.max(0, ing - gas);
