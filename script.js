@@ -15,6 +15,8 @@
   { name: "Comisiones cambiarias", slug: "exchange-fees", color: "#27c6d8", sort_order: 70, projected_amount: 15000 },
   { name: "Gastos familiares", slug: "family-expenses", color: "#7bd88f", sort_order: 80, projected_amount: 100000 },
   { name: "Personal", slug: "personal", color: "#c78bff", sort_order: 90, projected_amount: 0 },
+  { name: "Pago de Préstamos", slug: "loan-payments", color: "#e53935", sort_order: 95, projected_amount: 0 },
+  { name: "Pagos de Suscripciones", slug: "subscriptions", color: "#8e24aa", sort_order: 96, projected_amount: 0 },
   { name: "Otros", slug: "others-misc", color: "#98a2b3", sort_order: 100, projected_amount: 70000 },
   { name: "Sin categoría", slug: "uncategorized", color: "#596273", sort_order: 110, projected_amount: 0 }
 ];
@@ -52,6 +54,8 @@ const CATEGORY_LABELS = {
   "exchange-fees": "Comisiones cambiarias",
   "family-expenses": "Gastos familiares",
   personal: "Personal",
+  "loan-payments": "Pago de Préstamos",
+  subscriptions: "Pagos de Suscripciones",
   "others-misc": "Otros",
   uncategorized: "Sin categoría"
 };
