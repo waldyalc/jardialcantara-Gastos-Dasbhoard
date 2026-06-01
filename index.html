@@ -353,23 +353,24 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--ink);min-hei
 <!-- ══════ PROYECCIÓN ══════ -->
 <div class="panel" id="panel-proyeccion">
 
-  <!-- Selector de mes -->
+  <!-- Cabecera con selector de mes y estado -->
   <div class="card" style="margin-bottom:1rem">
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem">
       <div>
-        <div class="ct" style="margin-bottom:.2rem">🎯 Presupuesto vs. Real</div>
-        <div style="font-size:13px;color:var(--mgray)">Define tu presupuesto mensual y compáralo con lo registrado</div>
+        <div class="ct" style="margin-bottom:.2rem">🎯 Proyección Fija Mensual</div>
+        <div style="font-size:13px;color:var(--mgray)">El presupuesto se copia automáticamente cada mes. Modifica solo cuando cambien tus cifras.</div>
       </div>
-      <div style="display:flex;align-items:center;gap:.5rem">
+      <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
         <label style="font-size:13px;font-weight:700;color:var(--dgray)">Mes:</label>
         <input type="month" id="proy-mes" style="padding:8px 12px;border:1.5px solid #DDD8CC;border-radius:8px;font-size:14px;font-family:'Lato',sans-serif;color:var(--ink);background:var(--white)" onchange="renderProyeccion()"/>
-        <button class="btn btn-gold btn-sm" onclick="saveProyeccion()">Guardar presupuesto</button>
       </div>
     </div>
+    <!-- Badge de estado -->
+    <div id="proy-estado-bar" style="margin-top:.85rem;padding:.65rem 1rem;border-radius:9px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem"></div>
   </div>
 
   <!-- KPIs comparación -->
-  <div class="g4" style="margin-bottom:1rem" id="proy-kpis">
+  <div class="g4" style="margin-bottom:1rem">
     <div class="kpi" style="border-top:3px solid var(--green)">
       <div class="kpi-l">Ingresos Proyectados</div>
       <div class="kpi-v c-g" id="pk-ing-proy">RD$0</div>
@@ -393,7 +394,10 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--ink);min-hei
   <div class="g2">
     <!-- PRESUPUESTO INGRESOS -->
     <div class="card">
-      <div class="ct">💚 Presupuesto de Ingresos</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
+        <div class="ct" style="margin-bottom:0">💚 Proyección de Ingresos</div>
+        <span id="proy-ing-badge" style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px"></span>
+      </div>
       <div id="proy-ing-form"></div>
       <div style="border-top:1px solid var(--lgray);margin-top:.75rem;padding-top:.65rem;display:flex;justify-content:space-between;font-size:14px;font-weight:700">
         <span>Total proyectado</span>
@@ -403,7 +407,10 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--ink);min-hei
 
     <!-- PRESUPUESTO GASTOS -->
     <div class="card">
-      <div class="ct">🔴 Presupuesto de Gastos</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
+        <div class="ct" style="margin-bottom:0">🔴 Proyección de Gastos</div>
+        <span id="proy-gas-badge" style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px"></span>
+      </div>
       <div id="proy-gas-form"></div>
       <div style="border-top:1px solid var(--lgray);margin-top:.75rem;padding-top:.65rem;display:flex;justify-content:space-between;font-size:14px;font-weight:700">
         <span>Total proyectado</span>
@@ -1203,6 +1210,8 @@ document.addEventListener('DOMContentLoaded', function(){
 
 // ══ PROYECCIÓN ═══════════════════════════════════════════════════════
 
+var proyEditando = false; // si está en modo edición
+
 function getMesProy(){
   var el = document.getElementById('proy-mes');
   return el ? el.value : new Date().toISOString().slice(0,7);
@@ -1210,28 +1219,83 @@ function getMesProy(){
 
 function fmtRD(n){ return 'RD$'+Number(n||0).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0}); }
 
+// Obtiene la proyección para un mes: si no existe, hereda la base o el mes anterior
+function getProyMes(mes){
+  if(proyData[mes]) return proyData[mes];
+  // buscar último mes con datos
+  var meses = Object.keys(proyData).sort();
+  if(meses.length === 0) return {ing:{}, gas:{}, confirmado:false, autocopiado:false};
+  var ultimo = meses[meses.length-1];
+  // copiar como base (no-confirmado, marcado como auto-copiado)
+  return { ing: Object.assign({}, proyData[ultimo].ing), gas: Object.assign({}, proyData[ultimo].gas), confirmado:false, autocopiado:true };
+}
+
 function saveProyeccion(){
   var mes = getMesProy();
-  if(!proyData[mes]) proyData[mes] = {ing:{}, gas:{}};
-
+  var proy = getProyMes(mes);
   OPS.ingreso.forEach(function(cat){
     var el = document.getElementById('ping-'+cat.replace(/[^a-z0-9]/gi,'_'));
-    var val = parseFloat(el ? el.value : 0)||0;
-    proyData[mes].ing[cat] = val;
+    proy.ing[cat] = parseFloat(el ? el.value : 0)||0;
   });
   OPS.gasto.forEach(function(cat){
     var el = document.getElementById('pgas-'+cat.replace(/[^a-z0-9]/gi,'_'));
-    var val = parseFloat(el ? el.value : 0)||0;
-    proyData[mes].gas[cat] = val;
+    proy.gas[cat] = parseFloat(el ? el.value : 0)||0;
   });
+  proy.confirmado = true;
+  proy.autocopiado = false;
+  proy.fechaConfirmacion = new Date().toISOString();
+  proyData[mes] = proy;
+  proyEditando = false;
   save();
   renderProyeccion();
-  alert('✅ Presupuesto de '+mes+' guardado correctamente.');
+}
+
+function activarEdicion(){
+  proyEditando = true;
+  renderProyeccion();
+  // scroll al formulario
+  var el = document.getElementById('proy-ing-form');
+  if(el) el.scrollIntoView({behavior:'smooth', block:'start'});
 }
 
 function renderProyeccion(){
   var mes = getMesProy();
-  var proy = proyData[mes] || {ing:{}, gas:{}};
+  var proy = getProyMes(mes);
+  var confirmado = proy.confirmado;
+  var autocopiado = proy.autocopiado;
+  var soloVer = confirmado && !proyEditando;
+
+  // ── BARRA DE ESTADO ──
+  var estadoBar = document.getElementById('proy-estado-bar');
+  if(estadoBar){
+    if(confirmado && !proyEditando){
+      var fecha = proy.fechaConfirmacion ? new Date(proy.fechaConfirmacion).toLocaleDateString('es-DO',{day:'2-digit',month:'long',year:'numeric'}) : mes;
+      estadoBar.style.background = '#f0fdf4';
+      estadoBar.style.border = '1px solid #86efac';
+      estadoBar.innerHTML = '<span style="color:#15803d;font-weight:700;font-size:13px">✅ Confirmado para '+mes+' — Última actualización: '+fecha+'</span>'
+        +'<button class="btn btn-outline btn-sm" onclick="activarEdicion()" style="font-size:12px">✏️ Modificar proyección</button>';
+    } else if(autocopiado){
+      estadoBar.style.background = '#fffbeb';
+      estadoBar.style.border = '1px solid #fcd34d';
+      estadoBar.innerHTML = '<span style="color:#92400e;font-weight:700;font-size:13px">📋 Auto-copiado del mes anterior — Confirma o modifica antes de cerrar el mes</span>'
+        +'<div style="display:flex;gap:.5rem"><button class="btn btn-gold btn-sm" onclick="saveProyeccion()" style="font-size:12px">✅ Confirmar sin cambios</button>'
+        +'<button class="btn btn-outline btn-sm" onclick="activarEdicion()" style="font-size:12px">✏️ Modificar</button></div>';
+    } else {
+      estadoBar.style.background = '#eff6ff';
+      estadoBar.style.border = '1px solid #93c5fd';
+      estadoBar.innerHTML = '<span style="color:#1e40af;font-weight:700;font-size:13px">📝 Editando proyección de '+mes+' — Guarda cuando termines</span>'
+        +'<div style="display:flex;gap:.5rem"><button class="btn btn-ink btn-sm" onclick="saveProyeccion()" style="font-size:12px">✅ Guardar y confirmar</button>'
+        +'<button class="btn btn-danger btn-sm" onclick="cancelarEdicion()" style="font-size:12px">✖ Cancelar</button></div>';
+    }
+  }
+
+  // Badges de estado en cards
+  var ingBadge = document.getElementById('proy-ing-badge');
+  var gasBadge = document.getElementById('proy-gas-badge');
+  var badgeTxt = soloVer ? '🔒 Confirmado' : '✏️ Editando';
+  var badgeBg  = soloVer ? '#dcfce7' : '#dbeafe';
+  var badgeCol = soloVer ? '#15803d' : '#1e40af';
+  [ingBadge, gasBadge].forEach(function(b){ if(b){ b.textContent=badgeTxt; b.style.background=badgeBg; b.style.color=badgeCol; }});
 
   // Transacciones del mes seleccionado
   var txMes = txData.filter(function(t){ return t.fecha && t.fecha.slice(0,7)===mes; });
@@ -1244,11 +1308,18 @@ function renderProyeccion(){
   ingForm.innerHTML = OPS.ingreso.map(function(cat){
     var id = 'ping-'+cat.replace(/[^a-z0-9]/gi,'_');
     var val = proy.ing[cat]||0;
-    if(val) totalIngProy += val;
-    return '<div class="fl" style="margin-bottom:.5rem">'
-      +'<label style="font-size:11px">'+cat+'</label>'
+    totalIngProy += val;
+    var dot = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+(CAT_COL[cat]||'#43A047')+';margin-right:6px;vertical-align:middle"></span>';
+    if(soloVer){
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem .6rem;background:var(--lgray);border-radius:8px;margin-bottom:.4rem;font-size:14px">'
+        +'<span>'+dot+cat+'</span>'
+        +'<strong style="color:'+(val>0?'var(--green)':'var(--mgray)')+'">'+fmtRD(val)+'</strong>'
+        +'</div>';
+    }
+    return '<div class="fl" style="margin-bottom:.45rem">'
+      +'<label style="font-size:11px">'+dot+cat+'</label>'
       +'<input type="number" id="'+id+'" value="'+(val||'')+'" placeholder="0" inputmode="decimal" min="0" step="0.01"'
-      +' oninput="recalcProyTotals()" style="padding:8px 10px;border:1.5px solid #DDD8CC;border-radius:8px;font-size:14px;width:100%"/>'
+      +' oninput="recalcProyTotals()" style="padding:9px 11px;border:1.5px solid #DDD8CC;border-radius:8px;font-size:14px;width:100%"/>'
       +'</div>';
   }).join('');
   document.getElementById('proy-ing-total').textContent = fmtRD(totalIngProy);
@@ -1259,11 +1330,18 @@ function renderProyeccion(){
   gasForm.innerHTML = OPS.gasto.map(function(cat){
     var id = 'pgas-'+cat.replace(/[^a-z0-9]/gi,'_');
     var val = proy.gas[cat]||0;
-    if(val) totalGasProy += val;
-    return '<div class="fl" style="margin-bottom:.5rem">'
-      +'<label style="font-size:11px">'+cat+'</label>'
+    totalGasProy += val;
+    var dot = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+(CAT_COL[cat]||'#C0392B')+';margin-right:6px;vertical-align:middle"></span>';
+    if(soloVer){
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem .6rem;background:var(--lgray);border-radius:8px;margin-bottom:.4rem;font-size:14px">'
+        +'<span>'+dot+cat+'</span>'
+        +'<strong style="color:'+(val>0?'var(--red)':'var(--mgray)')+'">'+fmtRD(val)+'</strong>'
+        +'</div>';
+    }
+    return '<div class="fl" style="margin-bottom:.45rem">'
+      +'<label style="font-size:11px">'+dot+cat+'</label>'
       +'<input type="number" id="'+id+'" value="'+(val||'')+'" placeholder="0" inputmode="decimal" min="0" step="0.01"'
-      +' oninput="recalcProyTotals()" style="padding:8px 10px;border:1.5px solid #DDD8CC;border-radius:8px;font-size:14px;width:100%"/>'
+      +' oninput="recalcProyTotals()" style="padding:9px 11px;border:1.5px solid #DDD8CC;border-radius:8px;font-size:14px;width:100%"/>'
       +'</div>';
   }).join('');
   document.getElementById('proy-gas-total').textContent = fmtRD(totalGasProy);
