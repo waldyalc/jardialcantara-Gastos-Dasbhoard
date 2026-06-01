@@ -251,21 +251,52 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--ink);min-hei
         <button class="btn btn-danger btn-sm" onclick="clearAll()" title="Borrar todo">🗑</button>
       </div>
 
-      <!-- Fondo emergencia -->
+      <!-- Fondo emergencia dual -->
       <div style="margin-top:1rem;padding-top:.85rem;border-top:1px solid var(--lgray)">
-        <div class="ct" style="margin-bottom:.5rem">Fondo de emergencia</div>
-        <div class="g2">
-          <div class="fl">
-            <label>Meta (RD$)</label>
-            <input type="number" id="fondo-meta" placeholder="150,000" inputmode="decimal" oninput="updateFondo()"/>
+        <div class="ct" style="margin-bottom:.75rem">🛡️ Fondo de Emergencia</div>
+
+        <!-- PESOS -->
+        <div style="background:var(--lgray);border-radius:10px;padding:.85rem;margin-bottom:.65rem">
+          <div style="font-size:12px;font-weight:700;color:var(--dgray);margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.04em">🇩🇴 En Pesos Dominicanos (RD$)</div>
+          <div class="g2">
+            <div class="fl" style="margin-bottom:0">
+              <label>Meta (RD$)</label>
+              <input type="number" id="fondo-meta-dop" placeholder="500,000" inputmode="decimal" oninput="updateFondo()"/>
+            </div>
+            <div class="fl" style="margin-bottom:0">
+              <label>Acumulado (RD$)</label>
+              <input type="number" id="fondo-acu-dop" placeholder="0" inputmode="decimal" oninput="updateFondo()"/>
+            </div>
           </div>
-          <div class="fl">
-            <label>Acumulado (RD$)</label>
-            <input type="number" id="fondo-acu" placeholder="0" inputmode="decimal" oninput="updateFondo()"/>
+          <div class="pbar" style="margin-top:.6rem"><div class="pfill" id="fondo-bar-dop" style="width:0%;background:var(--gold)"></div></div>
+          <div style="font-size:12px;color:var(--mgray);margin-top:5px" id="fondo-lbl-dop">Ingresa tu meta y lo acumulado</div>
+        </div>
+
+        <!-- DÓLARES -->
+        <div style="background:var(--lgray);border-radius:10px;padding:.85rem">
+          <div style="font-size:12px;font-weight:700;color:var(--dgray);margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.04em">🇺🇸 En Dólares (USD)</div>
+          <div class="g2">
+            <div class="fl" style="margin-bottom:0">
+              <label>Meta (USD)</label>
+              <input type="number" id="fondo-meta-usd" placeholder="5,000" inputmode="decimal" oninput="updateFondo()"/>
+            </div>
+            <div class="fl" style="margin-bottom:0">
+              <label>Acumulado (USD)</label>
+              <input type="number" id="fondo-acu-usd" placeholder="0" inputmode="decimal" oninput="updateFondo()"/>
+            </div>
+          </div>
+          <div class="pbar" style="margin-top:.6rem"><div class="pfill" id="fondo-bar-usd" style="width:0%;background:var(--blue)"></div></div>
+          <div style="font-size:12px;color:var(--mgray);margin-top:5px" id="fondo-lbl-usd">Ingresa tu meta y lo acumulado</div>
+        </div>
+
+        <!-- RESUMEN TOTAL -->
+        <div id="fondo-resumen" style="display:none;margin-top:.65rem;background:var(--ink);border-radius:10px;padding:.85rem;color:var(--white)">
+          <div style="font-size:11px;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem">Progreso Global</div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span id="fondo-resumen-txt" style="font-size:13px;color:rgba(255,255,255,.8)"></span>
+            <span id="fondo-resumen-pct" style="font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;color:var(--gold)"></span>
           </div>
         </div>
-        <div class="pbar"><div class="pfill" id="fondo-bar" style="width:0%;background:var(--gold)"></div></div>
-        <div style="font-size:11px;color:var(--mgray);margin-top:4px" id="fondo-lbl">Ingresa tu meta y lo acumulado</div>
       </div>
     </div>
 
@@ -721,16 +752,63 @@ function renderChart5030(){
 }
 
 function updateFondo(){
-  var meta = parseFloat(document.getElementById('fondo-meta').value)||0;
-  var acu  = parseFloat(document.getElementById('fondo-acu').value)||0;
-  if(!meta){ setText('fondo-lbl','Ingresa tu meta'); return; }
-  var pct = Math.min(100, Math.round((acu/meta)*100));
-  var bar = document.getElementById('fondo-bar');
-  if(bar){
-    bar.style.width = pct+'%';
-    bar.style.background = pct>=100?'var(--green)':pct>=50?'var(--gold)':'var(--red)';
+  // ── PESOS ──
+  var metaDOP = parseFloat(document.getElementById('fondo-meta-dop').value)||0;
+  var acuDOP  = parseFloat(document.getElementById('fondo-acu-dop').value)||0;
+  var barDOP  = document.getElementById('fondo-bar-dop');
+  if(metaDOP > 0){
+    var pctDOP = Math.min(100, Math.round((acuDOP/metaDOP)*100));
+    barDOP.style.width = pctDOP+'%';
+    barDOP.style.background = pctDOP>=100?'var(--green)':pctDOP>=50?'var(--gold)':'var(--red)';
+    var faltanDOP = Math.max(0, metaDOP - acuDOP);
+    setText('fondo-lbl-dop',
+      pctDOP+'% completado · '+(pctDOP>=100?'✅ Meta alcanzada':'Faltan RD$'+faltanDOP.toLocaleString('en-US')));
+  } else {
+    barDOP.style.width='0%';
+    setText('fondo-lbl-dop','Ingresa tu meta en pesos');
   }
-  setText('fondo-lbl', pct+'% completado — Faltan: RD$'+Math.max(0,meta-acu).toLocaleString());
+
+  // ── DÓLARES ──
+  var metaUSD = parseFloat(document.getElementById('fondo-meta-usd').value)||0;
+  var acuUSD  = parseFloat(document.getElementById('fondo-acu-usd').value)||0;
+  var barUSD  = document.getElementById('fondo-bar-usd');
+  if(metaUSD > 0){
+    var pctUSD = Math.min(100, Math.round((acuUSD/metaUSD)*100));
+    barUSD.style.width = pctUSD+'%';
+    barUSD.style.background = pctUSD>=100?'var(--green)':pctUSD>=50?'#1A56DB':'var(--red)';
+    var faltanUSD = Math.max(0, metaUSD - acuUSD).toFixed(2);
+    setText('fondo-lbl-usd',
+      pctUSD+'% completado · '+(pctUSD>=100?'✅ Meta alcanzada':'Faltan $'+Number(faltanUSD).toLocaleString('en-US')));
+  } else {
+    barUSD.style.width='0%';
+    setText('fondo-lbl-usd','Ingresa tu meta en dólares');
+  }
+
+  // ── RESUMEN GLOBAL ──
+  var resumen = document.getElementById('fondo-resumen');
+  if(metaDOP > 0 || metaUSD > 0){
+    resumen.style.display = 'block';
+    var partesDOP = metaDOP > 0 ? Math.round((acuDOP/metaDOP)*100) : 0;
+    var partesUSD = metaUSD > 0 ? Math.round((acuUSD/metaUSD)*100) : 0;
+    var metas = (metaDOP>0 && metaUSD>0) ? 2 : 1;
+    var promedio = Math.round((partesDOP + partesUSD) / metas);
+    var dopTxt = metaDOP>0 ? 'RD$'+acuDOP.toLocaleString('en-US')+' / RD$'+metaDOP.toLocaleString('en-US') : '';
+    var usdTxt = metaUSD>0 ? '$'+acuUSD.toLocaleString('en-US')+' / $'+metaUSD.toLocaleString('en-US') : '';
+    var lineas = [dopTxt, usdTxt].filter(Boolean).join('   •   ');
+    setText('fondo-resumen-txt', lineas);
+    setText('fondo-resumen-pct', promedio+'%');
+    var pctEl = document.getElementById('fondo-resumen-pct');
+    if(pctEl) pctEl.style.color = promedio>=100?'var(--green)':promedio>=50?'var(--gold)':'var(--red)';
+  } else {
+    resumen.style.display = 'none';
+  }
+
+  // Guardar en localStorage
+  try{
+    localStorage.setItem('sclf_fondo', JSON.stringify({
+      metaDOP:metaDOP, acuDOP:acuDOP, metaUSD:metaUSD, acuUSD:acuUSD
+    }));
+  }catch(e){}
 }
 
 function exportCSV(){
@@ -956,6 +1034,16 @@ document.addEventListener('DOMContentLoaded', function(){
   var hoy = new Date().toISOString().split('T')[0];
   var fechaEl = document.getElementById('tx-fecha');
   if(fechaEl) fechaEl.value = hoy;
+
+  // Restaurar fondo de emergencia
+  try{
+    var fondoSaved = JSON.parse(localStorage.getItem('sclf_fondo')||'{}');
+    if(fondoSaved.metaDOP) document.getElementById('fondo-meta-dop').value = fondoSaved.metaDOP;
+    if(fondoSaved.acuDOP)  document.getElementById('fondo-acu-dop').value  = fondoSaved.acuDOP;
+    if(fondoSaved.metaUSD) document.getElementById('fondo-meta-usd').value = fondoSaved.metaUSD;
+    if(fondoSaved.acuUSD)  document.getElementById('fondo-acu-usd').value  = fondoSaved.acuUSD;
+    if(fondoSaved.metaDOP||fondoSaved.metaUSD) updateFondo();
+  }catch(e){}
 
   // Cargar opciones iniciales
   updateDescOptions();
