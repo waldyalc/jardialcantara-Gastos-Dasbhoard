@@ -242,6 +242,7 @@ function bindEvents() {
     renderIncomeForm();
   });
   document.getElementById("income-form").addEventListener("input", handleIncomeAmountInput);
+  document.getElementById("income-form").addEventListener("blur", handleIncomeAmountBlur, true);
   document.getElementById("save-income").addEventListener("click", saveIncomeProjections);
 
   document.getElementById("close-expense").addEventListener("click", closeExpenseModal);
@@ -1462,8 +1463,8 @@ function renderIncomeForm() {
         <span class="cat-dot" style="background:${cat.color}"></span>
         ${escapeHtml(cat.name)}
       </label>
-      <input id="income-${cat.slug}" type="text" inputmode="numeric" autocomplete="off"
-        value="${amount ? compactNumber.format(amount) : ''}"
+      <input id="income-${cat.slug}" type="number" inputmode="decimal" autocomplete="off" min="0" step="0.01"
+        value="${amount ? amount : ''}"
         placeholder="0.00"
         data-income-slug="${cat.slug}" />
     </div>`;
@@ -1475,19 +1476,26 @@ function renderIncomeForm() {
 function handleIncomeAmountInput(event) {
   const input = event.target;
   if (!input.dataset.incomeSlug) return;
-  const raw = input.value.replace(/,/g, "").trim();
-  const isTypingDecimal = raw.endsWith(".") || /\.\d{0,1}$/.test(raw);
-  if (!isTypingDecimal) {
-    const val = parseAmountInput(input.value);
-    input.value = val ? compactNumber.format(val) : "";
-  }
+  // Solo actualizar totales mientras se escribe — NO reformatear el campo
+  updateIncomeTotals();
+}
+
+function handleIncomeAmountBlur(event) {
+  const input = event.target;
+  if (!input.dataset.incomeSlug) return;
+  // Al salir del campo, formatear con 2 decimales
+  const val = parseAmountInput(input.value);
+  input.value = val ? compactNumber.format(val) : "";
+  updateIncomeTotals();
+}
+
+function updateIncomeTotals() {
   let total = 0;
-  document.querySelectorAll("[data-income-slug]").forEach(inp => {
-    total += parseAmountInput(inp.value);
-  });
   let filled = 0;
   document.querySelectorAll("[data-income-slug]").forEach(inp => {
-    if (parseAmountInput(inp.value) > 0) filled++;
+    const val = parseAmountInput(inp.value);
+    total += val;
+    if (val > 0) filled++;
   });
   document.getElementById("income-modal-total").textContent = money(total);
   document.getElementById("income-count").textContent = `${filled} de ${DEFAULT_INCOME_CATEGORIES.length} fuentes con ingreso`;
@@ -1498,7 +1506,7 @@ async function saveIncomeProjections() {
   const monthDate = `${selectedMonth}-01`;
   const rows = DEFAULT_INCOME_CATEGORIES.map(cat => ({
     income_slug: cat.slug,
-    projected_amount: parseAmountInput(document.getElementById(`income-${cat.slug}`)?.value || "0"),
+    projected_amount: parseFloat(document.getElementById(`income-${cat.slug}`)?.value || "0") || 0,
     month: monthDate
   })).filter(r => r.projected_amount > 0);
 
