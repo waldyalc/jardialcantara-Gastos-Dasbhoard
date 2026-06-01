@@ -108,11 +108,12 @@ const app = {
 const rdMoney = new Intl.NumberFormat("es-DO", {
   style: "currency",
   currency: "DOP",
-  maximumFractionDigits: 0
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2
 });
 
-const compactNumber = new Intl.NumberFormat("es-DO", { maximumFractionDigits: 0 });
-const compactDecimal = new Intl.NumberFormat("es-DO", { maximumFractionDigits: 1 });
+const compactNumber = new Intl.NumberFormat("es-DO", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const compactDecimal = new Intl.NumberFormat("es-DO", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 document.addEventListener("DOMContentLoaded", init);
 
@@ -1230,11 +1231,11 @@ function getLastMonths(count) {
 }
 
 function money(value) {
-  return rdMoney.format(Math.round(Number(value || 0))).replace("DOP", "RD$");
+  return rdMoney.format(Number(value || 0)).replace("DOP", "RD$");
 }
 
 function formatAmountInput(value) {
-  const amount = Math.round(Number(value || 0));
+  const amount = Number(value || 0);
   return amount ? compactNumber.format(amount) : "0";
 }
 
