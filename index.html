@@ -63,6 +63,7 @@
             <p id="sync-copy">Cuenta de Supabase sincronizada para Jardi Alcantara.</p>
           </div>
           <div class="head-actions">
+            <button class="ghost-btn" id="open-snapshot" title="Mi situación financiera"><i data-lucide="landmark"></i><span>Mi situación</span></button>
             <button class="ghost-btn" id="sync-now" title="Sincronizar ahora"><i data-lucide="refresh-cw"></i><span>Sincronizar</span></button>
             <button class="ghost-btn" id="add-expense"><i data-lucide="plus"></i><span>Agregar gasto</span></button>
             <button class="icon-btn" id="logout" title="Cerrar sesiÃ³n"><i data-lucide="log-out"></i></button>
@@ -168,6 +169,17 @@
             <svg id="six-month-chart" viewBox="0 0 900 340" preserveAspectRatio="none" role="img" aria-label="Ãšltimos 6 meses por categorÃ­a"></svg>
             <div class="chart-tooltip" id="six-month-tooltip" aria-hidden="true"></div>
           </article>
+        </section>
+
+        <section class="panel fh-panel">
+          <div class="panel-head">
+            <div>
+              <h2>💡 Salud Financiera</h2>
+              <p>Vinculación entre ingresos y gastos proyectados — sugerencias de ahorro.</p>
+            </div>
+            <button class="secondary-btn compact" id="open-snapshot-2" onclick="openSnapshotModal()">Actualizar situación</button>
+          </div>
+          <div id="financial-health-panel" class="fh-body"></div>
         </section>
 
         <section class="panel income-panel">
@@ -299,6 +311,53 @@
             <button type="submit" class="primary-btn compact">Guardar gasto</button>
           </footer>
         </form>
+      </section>
+    </div>
+
+    <div class="modal-backdrop" id="snapshot-modal" aria-hidden="true">
+      <section class="modal snapshot-modal" role="dialog" aria-modal="true" aria-labelledby="snapshot-title">
+        <header>
+          <div>
+            <h2 id="snapshot-title">🏦 Mi Situación Financiera</h2>
+            <p>Registra tus saldos actuales y metas del fondo de emergencia.</p>
+          </div>
+          <button class="icon-btn" id="close-snapshot" title="Cerrar"><i data-lucide="x"></i></button>
+        </header>
+        <div class="snapshot-form">
+          <div class="snapshot-section">
+            <h3>💳 Saldos Actuales</h3>
+            <label>Saldo total en bancos (RD$)
+              <input type="number" id="snap-bank-balance" min="0" step="0.01" placeholder="0.00" />
+            </label>
+          </div>
+          <div class="snapshot-section">
+            <h3>🛡️ Fondo de Emergencia</h3>
+            <label>Nivel actual del fondo (RD$)
+              <input type="number" id="snap-ef-current" min="0" step="0.01" placeholder="0.00" />
+            </label>
+            <label>Meta del fondo de emergencia (RD$)
+              <input type="number" id="snap-ef-target" min="0" step="0.01" placeholder="Ej: 3 meses de gastos" />
+              <small>💡 Se recomienda 3–6 meses de gastos mensuales</small>
+            </label>
+          </div>
+          <div class="snapshot-section">
+            <h3>📊 Preferencias de Ahorro</h3>
+            <label>% del sobrante a destinar al ahorro
+              <input type="number" id="snap-savings-rate" min="1" max="100" step="1" placeholder="20" />
+              <small>💡 La regla 50/30/20 sugiere al menos el 20%</small>
+            </label>
+          </div>
+          <div class="snapshot-section">
+            <h3>📝 Notas</h3>
+            <label>Notas adicionales (opcional)
+              <textarea id="snap-notes" rows="3" placeholder="Ej: Cuenta BHD, cuenta Popular, inversiones..."></textarea>
+            </label>
+          </div>
+        </div>
+        <footer style="display:flex;justify-content:flex-end;gap:10px;padding:18px 24px;border-top:1px solid var(--line)">
+          <button class="secondary-btn compact" id="cancel-snapshot">Cancelar</button>
+          <button class="primary-btn compact" id="save-snapshot">Guardar situación</button>
+        </footer>
       </section>
     </div>
 

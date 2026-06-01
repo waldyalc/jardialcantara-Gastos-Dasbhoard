@@ -16,6 +16,7 @@
   { name: "Gastos familiares", slug: "family-expenses", color: "#7bd88f", sort_order: 80, projected_amount: 100000 },
   { name: "Aporte Mensual a Mamá", slug: "mom-support", color: "#f48fb1", sort_order: 85, projected_amount: 0 },
   { name: "Personal", slug: "personal", color: "#c78bff", sort_order: 90, projected_amount: 0 },
+  { name: "Aporte a Fondo de Emergencia", slug: "emergency-fund", color: "#f59e0b", sort_order: 93, projected_amount: 0 },
   { name: "Pago de Préstamos", slug: "loan-payments", color: "#e53935", sort_order: 95, projected_amount: 0 },
   { name: "Pagos de Suscripciones", slug: "subscriptions", color: "#8e24aa", sort_order: 96, projected_amount: 0 },
   { name: "Otros", slug: "others-misc", color: "#98a2b3", sort_order: 100, projected_amount: 70000 },
@@ -56,6 +57,7 @@ const CATEGORY_LABELS = {
   "family-expenses": "Gastos familiares",
   "mom-support": "Aporte Mensual a Mamá",
   personal: "Personal",
+  "emergency-fund": "Aporte a Fondo de Emergencia",
   "loan-payments": "Pago de Préstamos",
   subscriptions: "Pagos de Suscripciones",
   "others-misc": "Otros",
@@ -116,6 +118,7 @@ const app = {
   projections: [],
   incomeProjections: [],
   incomeMonth: monthKey(new Date()),
+  snapshot: { bank_balance: 0, emergency_fund_current: 0, emergency_fund_target: 0, savings_rate_pct: 20, notes: "" },
   trajectoryMeta: null,
   sixMonthMeta: null
 };
@@ -220,6 +223,12 @@ function bindEvents() {
   });
   document.getElementById("projection-form").addEventListener("input", handleProjectionAmountInput);
   document.getElementById("save-projections").addEventListener("click", saveProjections);
+
+  document.getElementById("open-snapshot").addEventListener("click", openSnapshotModal);
+  document.getElementById("close-snapshot").addEventListener("click", closeSnapshotModal);
+  document.getElementById("cancel-snapshot").addEventListener("click", closeSnapshotModal);
+  document.getElementById("snapshot-modal").addEventListener("click", e => { if (e.target.id === "snapshot-modal") closeSnapshotModal(); });
+  document.getElementById("save-snapshot").addEventListener("click", saveSnapshot);
 
   document.getElementById("open-income").addEventListener("click", openIncomeModal);
   document.getElementById("open-income-2").addEventListener("click", openIncomeModal);
@@ -406,11 +415,12 @@ async function loadApp(manual = false) {
 
   try {
     await ensureDefaults();
-    const [categories, expenses, projections, incomeProjections] = await Promise.all([
+    const [categories, expenses, projections, incomeProjections, snapshotRes] = await Promise.all([
       app.supabase.from("expense_categories").select("*").eq("is_active", true).order("sort_order"),
       app.supabase.from("expenses").select("*, expense_categories(name, slug, color)").order("spent_at", { ascending: false }),
       app.supabase.from("monthly_projections").select("*"),
-      app.supabase.from("monthly_income_projections").select("*")
+      app.supabase.from("monthly_income_projections").select("*"),
+      app.supabase.from("financial_snapshot").select("*").eq("user_id", app.session.user.id).maybeSingle()
     ]);
 
     if (categories.error) throw categories.error;
@@ -421,6 +431,7 @@ async function loadApp(manual = false) {
     app.expenses = normalizeExpenses(expenses.data || []);
     app.projections = projections.data || [];
     app.incomeProjections = (incomeProjections.data || []);
+    if (snapshotRes.data) app.snapshot = snapshotRes.data;
     populateExpenseCategorySelect();
     app.supabaseUnavailable = false;
     showDashboard();
@@ -677,6 +688,7 @@ function renderDashboard() {
   renderCategoryPills();
   renderTransactions();
   renderIncomePanel();
+  renderFinancialHealth();
   refreshIcons();
 }
 
@@ -1532,4 +1544,146 @@ function renderIncomePanel() {
   document.getElementById("income-table-total").textContent = money(total);
   const subtitle = document.getElementById("income-panel-subtitle");
   if (subtitle) subtitle.textContent = `Ingresos proyectados para ${labelForMonth(month)}.`;
+}
+
+// ─── FINANCIAL HEALTH & SNAPSHOT ─────────────────────────────────────────────
+
+function renderFinancialHealth() {
+  const panel = document.getElementById("financial-health-panel");
+  if (!panel) return;
+
+  const month = app.projectionMonth;
+  const incomeTotal  = getMonthIncomeTotal(month);
+  const expenseTotal = getMonthProjectionTotal(month);
+  const surplus      = incomeTotal - expenseTotal;
+  const savingsRate  = Number(app.snapshot.savings_rate_pct) || 20;
+  const suggestedSavings = surplus > 0 ? (surplus * savingsRate / 100) : 0;
+  const suggestedEmergency = surplus > 0 ? Math.max(suggestedSavings * 0.5, surplus * 0.1) : 0;
+
+  // Fondo de emergencia
+  const efCurrent = Number(app.snapshot.emergency_fund_current) || 0;
+  const efTarget  = Number(app.snapshot.emergency_fund_target)  || (expenseTotal * 3);
+  const efPct     = efTarget > 0 ? Math.min((efCurrent / efTarget) * 100, 100) : 0;
+  const efAlert   = efCurrent < efTarget * 0.8;
+
+  // Barras de comparación
+  const maxBar = Math.max(incomeTotal, expenseTotal, 1);
+  const incomePct  = (incomeTotal  / maxBar * 100).toFixed(1);
+  const expensePct = (expenseTotal / maxBar * 100).toFixed(1);
+
+  // Sugerencias
+  let suggestions = "";
+  if (incomeTotal === 0) {
+    suggestions = `<div class="fh-tip tip-warn">⚠️ No has definido ingresos para este mes. Haz clic en <strong>"Definir ingresos"</strong> para comenzar.</div>`;
+  } else if (surplus <= 0) {
+    suggestions = `<div class="fh-tip tip-danger">🚨 <strong>Tus gastos superan tus ingresos en ${money(Math.abs(surplus))}</strong>. Revisa las categorías con mayor gasto y considera reducir gastos no esenciales.</div>`;
+  } else {
+    suggestions = `
+      <div class="fh-tip tip-good">✅ <strong>Superávit de ${money(surplus)}</strong> este mes. Aquí te sugerimos cómo distribuirlo:</div>
+      <div class="fh-suggestions">
+        <div class="fh-suggestion">
+          <span class="fh-suggestion-icon" style="background:#f59e0b22;color:#f59e0b">🛡️</span>
+          <div>
+            <strong>Fondo de emergencia</strong>
+            <span>${money(suggestedEmergency)} (${(suggestedEmergency/surplus*100).toFixed(0)}% del sobrante)</span>
+            <small>Registra como gasto "Aporte a Fondo de Emergencia"</small>
+          </div>
+        </div>
+        <div class="fh-suggestion">
+          <span class="fh-suggestion-icon" style="background:#4487ff22;color:#4487ff">💰</span>
+          <div>
+            <strong>Ahorro / inversión</strong>
+            <span>${money(suggestedSavings - suggestedEmergency > 0 ? suggestedSavings - suggestedEmergency : suggestedSavings)} (${savingsRate}% configurado)</span>
+            <small>Basado en tu tasa de ahorro del ${savingsRate}%</small>
+          </div>
+        </div>
+        <div class="fh-suggestion">
+          <span class="fh-suggestion-icon" style="background:#28c98722;color:#28c987">🎯</span>
+          <div>
+            <strong>Libre disponible</strong>
+            <span>${money(Math.max(surplus - suggestedSavings, 0))}</span>
+            <small>Después de aplicar tu tasa de ahorro</small>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // Alerta fondo de emergencia
+  let efAlertHtml = "";
+  if (efAlert && efTarget > 0) {
+    efAlertHtml = `<div class="fh-tip tip-danger">🚨 <strong>Fondo de emergencia por debajo del 80%</strong> — Nivel actual: ${money(efCurrent)} de ${money(efTarget)} meta (${efPct.toFixed(0)}%). Deberías aportar ${money(efTarget - efCurrent)} para alcanzar tu meta.</div>`;
+  }
+
+  panel.innerHTML = `
+    <div class="fh-compare">
+      <div class="fh-bar-group">
+        <div class="fh-bar-label"><span style="color:var(--green)">▲ Ingresos</span><strong>${money(incomeTotal)}</strong></div>
+        <div class="fh-bar-track"><div class="fh-bar income-bar" style="width:${incomePct}%"></div></div>
+      </div>
+      <div class="fh-bar-group">
+        <div class="fh-bar-label"><span style="color:var(--red)">▼ Gastos</span><strong>${money(expenseTotal)}</strong></div>
+        <div class="fh-bar-track"><div class="fh-bar expense-bar" style="width:${expensePct}%"></div></div>
+      </div>
+    </div>
+
+    <div class="fh-ef-section">
+      <div class="fh-ef-header">
+        <span>🛡️ Fondo de Emergencia</span>
+        <strong>${money(efCurrent)} <small>/ ${money(efTarget)}</small></strong>
+      </div>
+      <div class="fh-ef-track"><div class="fh-ef-bar" style="width:${efPct}%;background:${efPct >= 80 ? 'var(--green)' : efPct >= 50 ? '#f59e0b' : 'var(--red)'}"></div></div>
+      <small style="color:var(--muted)">${efPct.toFixed(0)}% de tu meta alcanzada${efTarget === expenseTotal * 3 ? " (meta auto: 3 meses de gastos)" : ""}</small>
+    </div>
+
+    ${efAlertHtml}
+    ${suggestions}
+
+    <div class="fh-bank">
+      <span>🏦 Saldo en bancos registrado</span>
+      <strong>${money(Number(app.snapshot.bank_balance) || 0)}</strong>
+    </div>
+  `;
+}
+
+function openSnapshotModal() {
+  const s = app.snapshot;
+  document.getElementById("snap-bank-balance").value        = s.bank_balance || 0;
+  document.getElementById("snap-ef-current").value          = s.emergency_fund_current || 0;
+  document.getElementById("snap-ef-target").value           = s.emergency_fund_target || 0;
+  document.getElementById("snap-savings-rate").value        = s.savings_rate_pct || 20;
+  document.getElementById("snap-notes").value               = s.notes || "";
+  document.getElementById("snapshot-modal").classList.add("open");
+  document.getElementById("snapshot-modal").setAttribute("aria-hidden", "false");
+}
+
+function closeSnapshotModal() {
+  document.getElementById("snapshot-modal").classList.remove("open");
+  document.getElementById("snapshot-modal").setAttribute("aria-hidden", "true");
+}
+
+async function saveSnapshot() {
+  const data = {
+    bank_balance:             parseAmountInput(document.getElementById("snap-bank-balance").value),
+    emergency_fund_current:   parseAmountInput(document.getElementById("snap-ef-current").value),
+    emergency_fund_target:    parseAmountInput(document.getElementById("snap-ef-target").value),
+    savings_rate_pct:         parseFloat(document.getElementById("snap-savings-rate").value) || 20,
+    notes:                    document.getElementById("snap-notes").value.trim()
+  };
+
+  app.snapshot = { ...app.snapshot, ...data };
+
+  if (app.demoMode || app.supabaseUnavailable) {
+    closeSnapshotModal();
+    renderDashboard();
+    showToast("Situación financiera guardada.");
+    return;
+  }
+
+  if (!app.session?.user?.id) return;
+  const { error } = await app.supabase.from("financial_snapshot")
+    .upsert({ ...data, user_id: app.session.user.id }, { onConflict: "user_id" });
+  if (error) { showToast(error.message); return; }
+  closeSnapshotModal();
+  renderDashboard();
+  showToast("Situación financiera guardada correctamente.");
 }
