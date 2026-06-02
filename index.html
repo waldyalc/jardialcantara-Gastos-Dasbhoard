@@ -2024,12 +2024,18 @@ function renderPatrimonio(){
 
   // ── Cuentas bancarias ──
   var banEl=document.getElementById('ban-list');
-  var totBanDOP=0, totBanUSD=0;
+  // Separar: banco regular vs fondo de emergencia
+  var totBanDOP=0, totBanUSD=0;   // solo cuentas NO marcadas como EF
+  var totEFbanDOP=0, totEFbanUSD=0; // cuentas marcadas como EF (van al bloque de EF)
   if(banEl){
     if(!banData.length){ banEl.innerHTML='<div class="empty">Sin cuentas registradas aún.</div>'; }
     else {
       banEl.innerHTML=banData.map(function(x){
-        if(x.moneda==='DOP') totBanDOP+=x.monto; else totBanUSD+=x.monto;
+        if(x.esEF){
+          if(x.moneda==='DOP') totEFbanDOP+=x.monto; else totEFbanUSD+=x.monto;
+        } else {
+          if(x.moneda==='DOP') totBanDOP+=x.monto; else totBanUSD+=x.monto;
+        }
         var efBadge=x.esEF?'<span style="background:#f59e0b;color:#fff;font-size:10px;font-weight:900;padding:2px 7px;border-radius:99px;margin-left:6px">🛡️ FONDO EMERGENCIA</span>':'';
         var venceTxt=x.vence?'Vence: '+x.vence:'';
         var tasaTxt=x.tasa?'· '+x.tasa+'% anual':'';
@@ -2048,8 +2054,10 @@ function renderPatrimonio(){
           +'</div></div></div>';
       }).join('');
       var resumenBan='<div style="display:flex;justify-content:space-between;font-weight:700;font-size:13px;margin-top:.5rem;padding:.5rem;background:var(--lgray);border-radius:8px">';
-      if(totBanDOP>0) resumenBan+='<span style="color:var(--green)">Total RD$: '+fmtRD(totBanDOP)+'</span>';
-      if(totBanUSD>0) resumenBan+='<span style="color:var(--blue)">Total USD: $'+totBanUSD.toLocaleString('en-US')+'</span>';
+      if(totBanDOP>0)    resumenBan+='<span style="color:var(--green)">Banco RD$: '+fmtRD(totBanDOP)+'</span>';
+      if(totBanUSD>0)    resumenBan+='<span style="color:var(--blue)">Banco USD: $'+totBanUSD.toLocaleString('en-US')+'</span>';
+      if(totEFbanDOP>0)  resumenBan+='<span style="color:#92400e">🛡️ EF RD$: '+fmtRD(totEFbanDOP)+'</span>';
+      if(totEFbanUSD>0)  resumenBan+='<span style="color:#1e40af">🛡️ EF USD: $'+totEFbanUSD.toLocaleString('en-US')+'</span>';
       resumenBan+='</div>';
       banEl.innerHTML+=resumenBan;
     }
@@ -2066,29 +2074,43 @@ function renderPatrimonio(){
   recalcSobrante();
 
   // ── Totales generales ──
-  // Tasa de cambio
   var tasa = getTasaCambio();
 
-  // Convertir todo a RD$
-  var bolsaEnRD   = totBolsa * tasa;
-  var banUSDenRD  = totBanUSD * tasa;
-  var efUSDenRD   = efUSDacu * tasa;
-  var netoRD      = totBanDOP + banUSDenRD + efDOPacu + efUSDenRD + bolsaEnRD;
+  // Fondo de emergencia TOTAL = formulario + cuentas bancarias marcadas como EF
+  var efDOPtotal = efDOPacu + totEFbanDOP;
+  var efUSDtotal = efUSDacu + totEFbanUSD;
 
-  setText('pat-tot-bolsa', '$'+totBolsa.toFixed(0)+(totBolsa>0?' = '+fmtRD(bolsaEnRD):''));
-  setText('pat-tot-banco', fmtRD(totBanDOP + banUSDenRD));
-  setText('pat-tot-ef',    fmtRD(efDOPacu + efUSDenRD));
+  // Convertir todo a RD$
+  var bolsaEnRD     = totBolsa   * tasa;
+  var banUSDenRD    = totBanUSD  * tasa;   // solo banco regular
+  var efUSDtotalRD  = efUSDtotal * tasa;   // EF en USD → RD$
+  var netoRD = totBanDOP + banUSDenRD + efDOPtotal + efUSDtotalRD + bolsaEnRD;
+
+  // Tarjetas del banner
+  setText('pat-tot-bolsa',    '$'+totBolsa.toFixed(0)+(totBolsa>0?' = '+fmtRD(bolsaEnRD):''));
+  setText('pat-tot-banco',    fmtRD(totBanDOP + banUSDenRD));
+  // EF: muestra RD$ + USD convertido claramente
+  var efTxt = fmtRD(efDOPtotal);
+  if(efUSDtotal>0) efTxt += ' + $'+efUSDtotal.toFixed(0)+' ('+fmtRD(efUSDtotalRD)+')';
+  setText('pat-tot-ef', efTxt);
   setText('pat-tot-sobrante', fmtRD(sobrante));
   var sobTot=document.getElementById('pat-tot-sobrante');
   if(sobTot) sobTot.style.color=sobrante>0?'#27c987':'#f25563';
 
   setText('pat-total-neto', fmtRD(netoRD));
-  setText('pat-total-desglose',
-    'Tasa: 1 USD = RD$'+tasa.toFixed(2)+
-    (totBolsa>0?' · Bolsa: $'+totBolsa.toFixed(0)+' = '+fmtRD(bolsaEnRD):'') +
-    (totBanUSD>0?' · Banco USD: $'+totBanUSD.toFixed(0)+' = '+fmtRD(banUSDenRD):'') +
-    (efUSDacu>0?' · EF USD: $'+efUSDacu.toFixed(0)+' = '+fmtRD(efUSDenRD):'')
-  );
+  var desglose = 'Tasa: 1 USD = RD$'+tasa.toFixed(2);
+  if(bolsaEnRD>0)   desglose += ' · Bolsa: $'+totBolsa.toFixed(0)+' = '+fmtRD(bolsaEnRD);
+  if(banUSDenRD>0)  desglose += ' · Banco USD: $'+totBanUSD.toFixed(0)+' = '+fmtRD(banUSDenRD);
+  if(efUSDtotalRD>0)desglose += ' · Fondo Emerg. USD: $'+efUSDtotal.toFixed(0)+' = '+fmtRD(efUSDtotalRD);
+  setText('pat-total-desglose', desglose);
+
+  // Actualizar la sección de EF con los valores reales de las cuentas bancarias marcadas
+  if(totEFbanDOP>0 || totEFbanUSD>0){
+    var efDopEl = document.getElementById('pat-ef-dop-acu');
+    var efUsdEl = document.getElementById('pat-ef-usd-acu');
+    if(efDopEl && totEFbanDOP>0) efDopEl.textContent = 'RD$'+efDOPtotal.toLocaleString('en-US');
+    if(efUsdEl && totEFbanUSD>0) efUsdEl.textContent = '$'+efUSDtotal.toLocaleString('en-US');
+  }
 }
 
 function recalcProyTotals(){
