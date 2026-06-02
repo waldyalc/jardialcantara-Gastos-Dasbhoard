@@ -180,6 +180,7 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--ink);min-hei
   <div class="tab" onclick="showTab('flujo',this)">📊 Flujo</div>
   <div class="tab" onclick="showTab('simulador',this)">🎮 Simulador</div>
   <div class="tab" onclick="showTab('inversion',this)">📈 Inversión</div>
+  <div class="tab" onclick="showTab('patrimonio',this)">💎 Patrimonio</div>
   <div class="tab" onclick="showTab('sistema',this)">⭐ SCLF</div>
 </div>
 
@@ -606,6 +607,187 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--ink);min-hei
   </div>
 </div>
 
+<!-- ══════ PATRIMONIO ══════ -->
+<div class="panel" id="panel-patrimonio">
+
+  <!-- RESUMEN TOTAL -->
+  <div id="pat-resumen" style="background:linear-gradient(135deg,#1A1A2E,#1a237e);border-radius:14px;padding:1.4rem;margin-bottom:1rem;color:#fff">
+    <div style="font-size:11px;letter-spacing:.1em;color:rgba(255,255,255,.4);text-transform:uppercase;margin-bottom:.6rem">📊 Patrimonio Total Neto</div>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:52px;font-weight:900;color:var(--gold);line-height:1" id="pat-total-neto">RD$0</div>
+    <div class="g4" style="margin-top:1rem;gap:.65rem">
+      <div style="background:rgba(255,255,255,.06);border-radius:10px;padding:.75rem;text-align:center">
+        <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:3px">BOLSA</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;color:#4487ff" id="pat-tot-bolsa">$0</div>
+      </div>
+      <div style="background:rgba(255,255,255,.06);border-radius:10px;padding:.75rem;text-align:center">
+        <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:3px">BANCO</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;color:#27c987" id="pat-tot-banco">RD$0</div>
+      </div>
+      <div style="background:rgba(255,255,255,.06);border-radius:10px;padding:.75rem;text-align:center">
+        <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:3px">EMERGENCIA</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;color:var(--gold)" id="pat-tot-ef">RD$0</div>
+      </div>
+      <div style="background:rgba(255,255,255,.06);border-radius:10px;padding:.75rem;text-align:center">
+        <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:3px">SOBRANTE MES</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900" id="pat-tot-sobrante" style="color:#27c987">RD$0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FONDO DE EMERGENCIA -->
+  <div class="card" style="border:2px solid #f59e0b;background:linear-gradient(135deg,#fffbeb,#fff)">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-bottom:.85rem">
+      <div>
+        <div style="display:flex;align-items:center;gap:.5rem">
+          <span style="font-size:18px">🛡️</span>
+          <span style="font-weight:900;font-size:15px;color:#92400e">FONDO DE EMERGENCIA — NO SE TOCA</span>
+          <span style="background:#f59e0b;color:#fff;font-size:10px;font-weight:900;padding:2px 8px;border-radius:99px;letter-spacing:.04em">PROTEGIDO</span>
+        </div>
+        <div style="font-size:12px;color:#92400e;margin-top:3px;margin-left:28px">Este dinero solo se usa en emergencias reales. Si lo tocas, debes reponerlo.</div>
+      </div>
+    </div>
+    <div class="g2">
+      <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;padding:.85rem;text-align:center">
+        <div style="font-size:11px;color:#92400e;font-weight:700;margin-bottom:4px">🇩🇴 EN PESOS</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;color:#92400e" id="pat-ef-dop-acu">RD$0</div>
+        <div style="font-size:11px;color:#a16207;margin-top:3px">Meta: <strong id="pat-ef-dop-meta">RD$0</strong></div>
+        <div style="height:8px;background:#fef3c7;border-radius:99px;overflow:hidden;margin-top:6px"><div id="pat-ef-dop-bar" style="height:100%;border-radius:99px;background:#f59e0b;width:0%;transition:width .5s"></div></div>
+        <div style="font-size:11px;color:#a16207;margin-top:4px" id="pat-ef-dop-pct">0% alcanzado</div>
+      </div>
+      <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;padding:.85rem;text-align:center">
+        <div style="font-size:11px;color:#92400e;font-weight:700;margin-bottom:4px">🇺🇸 EN DÓLARES</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;color:#1e40af" id="pat-ef-usd-acu">$0</div>
+        <div style="font-size:11px;color:#1e40af;margin-top:3px">Meta: <strong id="pat-ef-usd-meta">$0</strong></div>
+        <div style="height:8px;background:#dbeafe;border-radius:99px;overflow:hidden;margin-top:6px"><div id="pat-ef-usd-bar" style="height:100%;border-radius:99px;background:#1e40af;width:0%;transition:width .5s"></div></div>
+        <div style="font-size:11px;color:#1e40af;margin-top:4px" id="pat-ef-usd-pct">0% alcanzado</div>
+      </div>
+    </div>
+    <div id="pat-ef-alerta" style="margin-top:.75rem;padding:.65rem 1rem;border-radius:8px;font-size:13px;font-weight:700;display:none"></div>
+    <div style="margin-top:.75rem;background:#fef9c3;border-radius:8px;padding:.65rem 1rem;font-size:12px;color:#713f12;border-left:3px solid #f59e0b">
+      💡 <strong>Regla de oro:</strong> Tu fondo de emergencia debe cubrir entre 3 y 6 meses de gastos. Si lo utilizas, tienes como prioridad #1 reponerlo antes de invertir.
+    </div>
+  </div>
+
+  <div class="g2">
+    <!-- INVERSIONES EN BOLSA -->
+    <div class="card">
+      <div class="ct">📈 Inversiones en Bolsa</div>
+      <div class="g2" style="margin-bottom:.75rem">
+        <div class="fl" style="margin-bottom:0">
+          <label>Ticker / Símbolo</label>
+          <input type="text" id="inv2-ticker" placeholder="VOO, AAPL, BTC..." style="text-transform:uppercase"/>
+        </div>
+        <div class="fl" style="margin-bottom:0">
+          <label>Broker / Plataforma</label>
+          <input type="text" id="inv2-broker" placeholder="IBKR, Schwab, Robinhood..."/>
+        </div>
+      </div>
+      <div class="g2" style="margin-bottom:.75rem">
+        <div class="fl" style="margin-bottom:0">
+          <label>Cantidad (unidades)</label>
+          <input type="number" id="inv2-cant" placeholder="0" inputmode="decimal" min="0" step="0.0001"/>
+        </div>
+        <div class="fl" style="margin-bottom:0">
+          <label>Valor actual por unidad (USD)</label>
+          <input type="number" id="inv2-precio" placeholder="0.00" inputmode="decimal" min="0" step="0.01"/>
+        </div>
+      </div>
+      <div class="fl">
+        <label>Tipo de activo</label>
+        <select id="inv2-tipo">
+          <option>📊 ETF / Fondo indexado</option>
+          <option>📈 Acción individual</option>
+          <option>₿ Criptomoneda</option>
+          <option>🥇 Oro / Commodities</option>
+          <option>🏠 Bienes raíces (REIT)</option>
+          <option>💵 Bono / Renta fija</option>
+          <option>💼 Otro activo</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:.5rem">
+        <button class="btn btn-ink btn-w" onclick="addInv2()">+ Agregar activo</button>
+        <a id="inv2-buscar" href="https://finance.yahoo.com" target="_blank" class="btn btn-outline btn-sm" style="white-space:nowrap;display:flex;align-items:center" onclick="abrirBuscador()">🔍 Buscar precio</a>
+      </div>
+      <div id="inv2-list" style="margin-top:.85rem"></div>
+    </div>
+
+    <!-- AHORROS E INVERSIONES BANCARIAS -->
+    <div class="card">
+      <div class="ct">🏦 Ahorros e Inversiones Bancarias</div>
+      <div class="fl">
+        <label>Tipo de instrumento</label>
+        <select id="ban-tipo">
+          <option>💳 Cuenta de Ahorro</option>
+          <option>🏦 Cuenta Corriente</option>
+          <option>📜 Certificado Financiero (CD)</option>
+          <option>📈 Fondo de Inversión Bancario</option>
+          <option>💵 Depósito a Plazo</option>
+        </select>
+      </div>
+      <div class="g2">
+        <div class="fl" style="margin-bottom:0">
+          <label>Banco / Institución</label>
+          <input type="text" id="ban-banco" placeholder="BHD, Popular, Banreservas..."/>
+        </div>
+        <div class="fl" style="margin-bottom:0">
+          <label>Moneda</label>
+          <select id="ban-moneda">
+            <option value="DOP">🇩🇴 Pesos (RD$)</option>
+            <option value="USD">🇺🇸 Dólares (USD)</option>
+          </select>
+        </div>
+      </div>
+      <div class="g2" style="margin-top:.5rem">
+        <div class="fl" style="margin-bottom:0">
+          <label>Monto</label>
+          <input type="number" id="ban-monto" placeholder="0.00" inputmode="decimal" min="0" step="0.01"/>
+        </div>
+        <div class="fl" style="margin-bottom:0">
+          <label>Tasa anual (%) — opcional</label>
+          <input type="number" id="ban-tasa" placeholder="0.00" inputmode="decimal" min="0" step="0.01"/>
+        </div>
+      </div>
+      <div class="fl" style="margin-top:.5rem">
+        <label>Vencimiento — opcional</label>
+        <input type="date" id="ban-vence"/>
+      </div>
+      <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.65rem">
+        <input type="checkbox" id="ban-ef" style="width:16px;height:16px;accent-color:#f59e0b"/>
+        <label for="ban-ef" style="font-size:13px;font-weight:700;color:#92400e;cursor:pointer">🛡️ Marcar como Fondo de Emergencia (protegido)</label>
+      </div>
+      <button class="btn btn-ink btn-w" onclick="addBanco()">+ Agregar cuenta</button>
+      <div id="ban-list" style="margin-top:.85rem"></div>
+    </div>
+  </div>
+
+  <!-- DESTINO DEL SOBRANTE -->
+  <div class="card" style="border-left:4px solid var(--green)">
+    <div class="ct">💸 Destino del Sobrante Mensual</div>
+    <div style="font-size:13px;color:var(--mgray);margin-bottom:.85rem">Indica cómo distribuyes el dinero que sobra después de cubrir todos tus gastos.</div>
+    <div id="pat-sobrante-info" style="background:var(--lgray);border-radius:10px;padding:.85rem;margin-bottom:.85rem;display:flex;justify-content:space-between;align-items:center;font-size:14px">
+      <span>💰 Sobrante estimado del mes:</span>
+      <strong id="pat-sobrante-val" style="font-size:18px;color:var(--green)">RD$0</strong>
+    </div>
+    <div class="g3">
+      <div class="fl" style="margin-bottom:0">
+        <label>🛡️ A Fondo de Emergencia (RD$)</label>
+        <input type="number" id="sob-ef" placeholder="0" inputmode="decimal" min="0" step="0.01" oninput="recalcSobrante()"/>
+      </div>
+      <div class="fl" style="margin-bottom:0">
+        <label>📈 A Inversión (RD$ o equiv.)</label>
+        <input type="number" id="sob-inv" placeholder="0" inputmode="decimal" min="0" step="0.01" oninput="recalcSobrante()"/>
+      </div>
+      <div class="fl" style="margin-bottom:0">
+        <label>🏦 A Ahorro Bancario (RD$)</label>
+        <input type="number" id="sob-aho" placeholder="0" inputmode="decimal" min="0" step="0.01" oninput="recalcSobrante()"/>
+      </div>
+    </div>
+    <div id="sob-balance" style="margin-top:.75rem;padding:.65rem 1rem;border-radius:8px;font-size:13px;font-weight:700;background:var(--lgray)">Ingresa los montos para ver el balance</div>
+    <button class="btn btn-gold btn-w" style="margin-top:.65rem" onclick="guardarDestinoSobrante()">✅ Guardar destino del sobrante</button>
+  </div>
+
+</div>
+
 <!-- ══════ SISTEMA SCLF ══════ -->
 <div class="panel" id="panel-sistema">
 
@@ -734,6 +916,7 @@ function showTab(id, el){
   if(id==='presupuesto'){ renderTx(); renderChartCats(); renderChart5030(); }
   if(id==='flujo'){ renderFlujo(); }
   if(id==='proyeccion'){ renderProyeccion(); }
+  if(id==='patrimonio'){ renderPatrimonio(); }
   if(id==='simulador'){ runSim(); }
   if(id==='inversion'){ renderPort(); }
   if(id==='sistema'){ renderPilares(); renderNiveles(); }
@@ -1474,6 +1657,235 @@ function renderProyeccion(){
     if(diffGas>0) msgs.push('📌 Llevas '+fmtRD(diffGas)+' sobre el presupuesto de gastos.');
     alerta.innerHTML = msgs.map(function(m){ return '<div style="margin-bottom:.4rem;color:rgba(255,255,255,.8)">'+m+'</div>'; }).join('');
   }
+}
+
+// ══ PATRIMONIO ═══════════════════════════════════════════════════════
+
+var inv2Data = [];
+var banData  = [];
+var sobData  = { ef:0, inv:0, aho:0 };
+try{ inv2Data = JSON.parse(localStorage.getItem('sclf_inv2')||'[]'); }catch(e){}
+try{ banData  = JSON.parse(localStorage.getItem('sclf_ban') ||'[]'); }catch(e){}
+try{ sobData  = JSON.parse(localStorage.getItem('sclf_sob') ||'{}'); }catch(e){}
+
+function savePat(){
+  try{
+    localStorage.setItem('sclf_inv2', JSON.stringify(inv2Data));
+    localStorage.setItem('sclf_ban',  JSON.stringify(banData));
+    localStorage.setItem('sclf_sob',  JSON.stringify(sobData));
+  }catch(e){}
+}
+
+function abrirBuscador(){
+  var ticker = (document.getElementById('inv2-ticker').value||'').trim().toUpperCase();
+  var url = ticker ? 'https://finance.yahoo.com/quote/'+ticker : 'https://finance.yahoo.com';
+  document.getElementById('inv2-buscar').href = url;
+}
+
+function addInv2(){
+  var ticker = (document.getElementById('inv2-ticker').value||'').trim().toUpperCase();
+  var broker = (document.getElementById('inv2-broker').value||'').trim();
+  var cant   = parseFloat(document.getElementById('inv2-cant').value)||0;
+  var precio = parseFloat(document.getElementById('inv2-precio').value)||0;
+  var tipo   = document.getElementById('inv2-tipo').value;
+  if(!ticker){ alert('Ingresa el ticker del activo'); return; }
+  if(!cant||!precio){ alert('Ingresa cantidad y valor actual'); return; }
+  inv2Data.push({ id:Date.now(), ticker:ticker, broker:broker, cant:cant, precio:precio, tipo:tipo, total:cant*precio });
+  savePat(); renderPatrimonio();
+  document.getElementById('inv2-ticker').value='';
+  document.getElementById('inv2-cant').value='';
+  document.getElementById('inv2-precio').value='';
+}
+
+function removeInv2(id){
+  inv2Data = inv2Data.filter(function(x){ return x.id!==id; });
+  savePat(); renderPatrimonio();
+}
+
+function addBanco(){
+  var tipo  = document.getElementById('ban-tipo').value;
+  var banco = (document.getElementById('ban-banco').value||'').trim();
+  var mon   = document.getElementById('ban-moneda').value;
+  var monto = parseFloat(document.getElementById('ban-monto').value)||0;
+  var tasa  = parseFloat(document.getElementById('ban-tasa').value)||0;
+  var vence = document.getElementById('ban-vence').value;
+  var esEF  = document.getElementById('ban-ef').checked;
+  if(!banco){ alert('Ingresa el nombre del banco o institución'); return; }
+  if(!monto){ alert('Ingresa el monto'); return; }
+  banData.push({ id:Date.now(), tipo:tipo, banco:banco, moneda:mon, monto:monto, tasa:tasa, vence:vence, esEF:esEF });
+  savePat(); renderPatrimonio();
+  document.getElementById('ban-banco').value='';
+  document.getElementById('ban-monto').value='';
+  document.getElementById('ban-tasa').value='';
+  document.getElementById('ban-vence').value='';
+  document.getElementById('ban-ef').checked=false;
+}
+
+function removeBanco(id){
+  var item = banData.find(function(x){ return x.id===id; });
+  if(item && item.esEF){
+    if(!confirm('⚠️ FONDO DE EMERGENCIA — NO SE TOCA\n\nEstás a punto de eliminar una cuenta marcada como Fondo de Emergencia.\n\nRecuerda: este dinero es tu red de seguridad. Si lo eliminas o usas, DEBES reponerlo como prioridad #1.\n\n¿Confirmas que deseas eliminarlo?')) return;
+  }
+  banData = banData.filter(function(x){ return x.id!==id; });
+  savePat(); renderPatrimonio();
+}
+
+function recalcSobrante(){
+  var ef  = parseFloat(document.getElementById('sob-ef').value)||0;
+  var inv = parseFloat(document.getElementById('sob-inv').value)||0;
+  var aho = parseFloat(document.getElementById('sob-aho').value)||0;
+  var asignado = ef+inv+aho;
+  var sobrante = calcSobrante();
+  var libre = sobrante - asignado;
+  var bal = document.getElementById('sob-balance');
+  if(bal){
+    if(libre>=0){
+      bal.style.background='#f0fdf4'; bal.style.color='#15803d';
+      bal.textContent='✅ Asignado: '+fmtRD(asignado)+' — Libre sin asignar: '+fmtRD(libre);
+    } else {
+      bal.style.background='#fef2f2'; bal.style.color='#dc2626';
+      bal.textContent='⚠️ Estás asignando '+fmtRD(Math.abs(libre))+' más de tu sobrante disponible';
+    }
+  }
+}
+
+function calcSobrante(){
+  var ing = txData.filter(function(t){ return t.tipo==='ingreso'; }).reduce(function(s,t){ return s+t.monto; },0);
+  var gas = txData.filter(function(t){ return t.tipo==='gasto';   }).reduce(function(s,t){ return s+t.monto; },0);
+  return Math.max(0, ing-gas);
+}
+
+function guardarDestinoSobrante(){
+  sobData.ef  = parseFloat(document.getElementById('sob-ef').value)||0;
+  sobData.inv = parseFloat(document.getElementById('sob-inv').value)||0;
+  sobData.aho = parseFloat(document.getElementById('sob-aho').value)||0;
+  sobData.fecha = new Date().toISOString();
+  savePat();
+  alert('✅ Destino del sobrante guardado correctamente.');
+  renderPatrimonio();
+}
+
+function renderPatrimonio(){
+  // ── Fondo de emergencia (desde el formulario de presupuesto) ──
+  var efDOPacu  = parseFloat(localStorage.getItem('_ef_dop_acu')||'0');
+  var efDOPmeta = parseFloat(localStorage.getItem('_ef_dop_meta')||'0');
+  var efUSDacu  = parseFloat(localStorage.getItem('_ef_usd_acu')||'0');
+  var efUSDmeta = parseFloat(localStorage.getItem('_ef_usd_meta')||'0');
+
+  // Leer del formulario del fondo si existe
+  var dAcu=parseFloat((document.getElementById('fondo-acu-dop')||{}).value||'0');
+  var dMet=parseFloat((document.getElementById('fondo-meta-dop')||{}).value||'0');
+  var uAcu=parseFloat((document.getElementById('fondo-acu-usd')||{}).value||'0');
+  var uMet=parseFloat((document.getElementById('fondo-meta-usd')||{}).value||'0');
+  if(dAcu||dMet){ efDOPacu=dAcu; efDOPmeta=dMet; }
+  if(uAcu||uMet){ efUSDacu=uAcu; efUSDmeta=uMet; }
+
+  setText('pat-ef-dop-acu','RD$'+efDOPacu.toLocaleString('en-US'));
+  setText('pat-ef-dop-meta','RD$'+efDOPmeta.toLocaleString('en-US'));
+  setText('pat-ef-usd-acu','$'+efUSDacu.toLocaleString('en-US'));
+  setText('pat-ef-usd-meta','$'+efUSDmeta.toLocaleString('en-US'));
+
+  var pctDOP = efDOPmeta>0?Math.min(100,Math.round((efDOPacu/efDOPmeta)*100)):0;
+  var pctUSD = efUSDmeta>0?Math.min(100,Math.round((efUSDacu/efUSDmeta)*100)):0;
+  var barDOP=document.getElementById('pat-ef-dop-bar');
+  var barUSD=document.getElementById('pat-ef-usd-bar');
+  if(barDOP){ barDOP.style.width=pctDOP+'%'; barDOP.style.background=pctDOP>=80?'#15803d':pctDOP>=50?'#f59e0b':'#dc2626'; }
+  if(barUSD){ barUSD.style.width=pctUSD+'%'; barUSD.style.background=pctUSD>=80?'#1e40af':pctUSD>=50?'#3b82f6':'#dc2626'; }
+  setText('pat-ef-dop-pct', pctDOP+'% alcanzado');
+  setText('pat-ef-usd-pct', pctUSD+'% alcanzado');
+
+  var alertaEl=document.getElementById('pat-ef-alerta');
+  if(alertaEl){
+    var alertas=[];
+    if(efDOPmeta>0 && pctDOP<80) alertas.push('🚨 Pesos: estás al '+pctDOP+'% — faltan RD$'+Math.round(efDOPmeta-efDOPacu).toLocaleString('en-US'));
+    if(efUSDmeta>0 && pctUSD<80) alertas.push('🚨 Dólares: estás al '+pctUSD+'% — faltan $'+Math.round(efUSDmeta-efUSDacu).toFixed(0));
+    if(alertas.length){
+      alertaEl.style.display='block'; alertaEl.style.background='#fef2f2'; alertaEl.style.color='#dc2626'; alertaEl.style.border='1px solid #fca5a5';
+      alertaEl.innerHTML=alertas.join('<br/>');
+    } else if(efDOPmeta>0||efUSDmeta>0){
+      alertaEl.style.display='block'; alertaEl.style.background='#f0fdf4'; alertaEl.style.color='#15803d'; alertaEl.style.border='1px solid #86efac';
+      alertaEl.innerHTML='✅ Fondo de emergencia en buen nivel. ¡Sigue así!';
+    } else { alertaEl.style.display='none'; }
+  }
+
+  // ── Inversiones en bolsa ──
+  var inv2El=document.getElementById('inv2-list');
+  var totBolsa=inv2Data.reduce(function(s,x){ return s+x.total; },0);
+  if(inv2El){
+    if(!inv2Data.length){ inv2El.innerHTML='<div class="empty">Sin activos registrados aún.</div>'; }
+    else {
+      inv2El.innerHTML=inv2Data.map(function(x){
+        var pct=totBolsa>0?Math.round((x.total/totBolsa)*100):0;
+        return '<div style="background:var(--lgray);border-radius:10px;padding:.75rem;margin-bottom:.45rem">'
+          +'<div style="display:flex;justify-content:space-between;align-items:flex-start">'
+          +'<div>'
+          +'<div style="font-weight:900;font-size:16px">'+x.ticker
+          +' <a href="https://finance.yahoo.com/quote/'+x.ticker+'" target="_blank" title="Ver en Yahoo Finance" style="font-size:11px;color:var(--blue);text-decoration:none">🔗 Ver precio</a></div>'
+          +'<div style="font-size:12px;color:var(--mgray)">'+x.tipo+' · '+x.broker+' · '+x.cant+' uds · $'+x.precio.toFixed(2)+'/u</div>'
+          +'</div>'
+          +'<div style="text-align:right">'
+          +'<div style="font-weight:900;font-size:15px;color:var(--blue)">$'+x.total.toFixed(2)+'</div>'
+          +'<div style="font-size:11px;color:var(--mgray)">'+pct+'% del portafolio</div>'
+          +'<button onclick="removeInv2('+x.id+')" style="background:none;border:none;cursor:pointer;color:#ccc;font-size:14px;margin-top:3px">✕ Eliminar</button>'
+          +'</div></div>'
+          +'<div style="height:6px;background:#d1d5db;border-radius:99px;overflow:hidden;margin-top:6px">'
+          +'<div style="height:100%;width:'+pct+'%;background:var(--blue);border-radius:99px"></div></div>'
+          +'</div>';
+      }).join('');
+    }
+    if(totBolsa>0){
+      inv2El.innerHTML+='<div style="text-align:right;font-weight:700;font-size:14px;margin-top:.5rem;color:var(--blue)">Total bolsa: $'+totBolsa.toFixed(2)+'</div>';
+    }
+  }
+
+  // ── Cuentas bancarias ──
+  var banEl=document.getElementById('ban-list');
+  var totBanDOP=0, totBanUSD=0;
+  if(banEl){
+    if(!banData.length){ banEl.innerHTML='<div class="empty">Sin cuentas registradas aún.</div>'; }
+    else {
+      banEl.innerHTML=banData.map(function(x){
+        if(x.moneda==='DOP') totBanDOP+=x.monto; else totBanUSD+=x.monto;
+        var efBadge=x.esEF?'<span style="background:#f59e0b;color:#fff;font-size:10px;font-weight:900;padding:2px 7px;border-radius:99px;margin-left:6px">🛡️ FONDO EMERGENCIA</span>':'';
+        var venceTxt=x.vence?'Vence: '+x.vence:'';
+        var tasaTxt=x.tasa?'· '+x.tasa+'% anual':'';
+        return '<div style="background:'+(x.esEF?'#fffbeb':'var(--lgray)')+';border:'+(x.esEF?'1px solid #fcd34d':'1px solid transparent')+';border-radius:10px;padding:.75rem;margin-bottom:.45rem">'
+          +'<div style="display:flex;justify-content:space-between;align-items:flex-start">'
+          +'<div><div style="font-weight:700;font-size:14px">'+x.tipo+efBadge+'</div>'
+          +'<div style="font-size:12px;color:var(--mgray);margin-top:2px">'+x.banco+' '+tasaTxt+(venceTxt?' · '+venceTxt:'')+'</div></div>'
+          +'<div style="text-align:right">'
+          +'<div style="font-weight:900;font-size:15px;color:'+(x.esEF?'#92400e':'var(--green)')+'">'+( x.moneda==='DOP'?'RD$':'$' )+x.monto.toLocaleString('en-US')+'</div>'
+          +'<button onclick="removeBanco('+x.id+')" style="background:none;border:none;cursor:pointer;color:#ccc;font-size:13px;margin-top:3px">✕</button>'
+          +'</div></div></div>';
+      }).join('');
+      var resumenBan='<div style="display:flex;justify-content:space-between;font-weight:700;font-size:13px;margin-top:.5rem;padding:.5rem;background:var(--lgray);border-radius:8px">';
+      if(totBanDOP>0) resumenBan+='<span style="color:var(--green)">Total RD$: '+fmtRD(totBanDOP)+'</span>';
+      if(totBanUSD>0) resumenBan+='<span style="color:var(--blue)">Total USD: $'+totBanUSD.toLocaleString('en-US')+'</span>';
+      resumenBan+='</div>';
+      banEl.innerHTML+=resumenBan;
+    }
+  }
+
+  // ── Sobrante ──
+  var sobrante=calcSobrante();
+  setText('pat-sobrante-val','RD$'+sobrante.toLocaleString('en-US'));
+  var sobEl=document.getElementById('pat-sobrante-val');
+  if(sobEl) sobEl.style.color=sobrante>0?'var(--green)':'var(--red)';
+  if(sobData.ef){ var s=document.getElementById('sob-ef'); if(s) s.value=sobData.ef; }
+  if(sobData.inv){ var s=document.getElementById('sob-inv'); if(s) s.value=sobData.inv; }
+  if(sobData.aho){ var s=document.getElementById('sob-aho'); if(s) s.value=sobData.aho; }
+  recalcSobrante();
+
+  // ── Totales generales ──
+  setText('pat-tot-bolsa','$'+totBolsa.toFixed(0));
+  setText('pat-tot-banco',fmtRD(totBanDOP)+(totBanUSD>0?' + $'+totBanUSD.toFixed(0):''));
+  setText('pat-tot-ef',fmtRD(efDOPacu)+(efUSDacu>0?' + $'+efUSDacu.toFixed(0):''));
+  setText('pat-tot-sobrante',fmtRD(sobrante));
+  var sobTot=document.getElementById('pat-tot-sobrante');
+  if(sobTot) sobTot.style.color=sobrante>0?'#27c987':'#f25563';
+  // Patrimonio neto total (en RD$, bolsa en USD se muestra aparte)
+  var netoRD=totBanDOP+efDOPacu;
+  setText('pat-total-neto',fmtRD(netoRD)+(totBolsa>0?' + $'+totBolsa.toFixed(0)+' USD':''));
 }
 
 function recalcProyTotals(){
