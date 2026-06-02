@@ -863,60 +863,58 @@ function renderChartCats(){
     gastos[t.desc] = (gastos[t.desc]||0) + t.monto;
   });
   var total = Object.values(gastos).reduce(function(s,v){ return s+v; },0);
-  if(!total){ el.innerHTML='<div class="empty">Sin gastos registrados.</div>'; return; }
+  if(!total){ el.innerHTML='<div class="empty">Sin gastos registrados.<br/>Registra un gasto para ver el gráfico.</div>'; return; }
 
-  // Agrupar
+  // Agrupar en los 5 grupos + capturar "sin grupo"
   var grupos = GRUPOS_GASTO.map(function(g){
     var suma = g.cats.reduce(function(s,c){ return s+(gastos[c]||0); },0);
     return { nombre:g.nombre, color:g.color, suma:suma };
-  }).filter(function(g){ return g.suma>0; });
+  });
+  // Agregar todo lo que no cayó en ningún grupo
+  var enGrupos = GRUPOS_GASTO.reduce(function(all,g){ return all.concat(g.cats); },[]);
+  var sinGrupo = Object.keys(gastos).filter(function(k){ return enGrupos.indexOf(k)<0; })
+    .reduce(function(s,k){ return s+gastos[k]; },0);
+  if(sinGrupo>0) grupos.push({ nombre:'📦 Otros', color:'#90A4AE', suma:sinGrupo });
 
-  // Pastel SVG
-  var cx=110, cy=110, r=90, ri=45;
-  var angulo = -Math.PI/2;
-  var slices = '';
+  grupos = grupos.filter(function(g){ return g.suma>0; });
   var totalGrupos = grupos.reduce(function(s,g){ return s+g.suma; },0);
 
-  grupos.forEach(function(g, i){
+  // ── Gráfico conic-gradient (compatible con todos los navegadores modernos) ──
+  var deg = 0;
+  var paradas = grupos.map(function(g){
     var frac = g.suma / totalGrupos;
-    var sweep = frac * 2 * Math.PI;
-    var x1 = cx + r*Math.cos(angulo);
-    var y1 = cy + r*Math.sin(angulo);
-    var x2 = cx + r*Math.cos(angulo+sweep);
-    var y2 = cy + r*Math.sin(angulo+sweep);
-    var xi1 = cx + ri*Math.cos(angulo);
-    var yi1 = cy + ri*Math.sin(angulo);
-    var xi2 = cx + ri*Math.cos(angulo+sweep);
-    var yi2 = cy + ri*Math.sin(angulo+sweep);
-    var large = sweep > Math.PI ? 1 : 0;
-    var pct = Math.round(frac*100);
-    // etiqueta en el centro del slice
-    var mid = angulo + sweep/2;
-    var lx = cx + (r*0.68)*Math.cos(mid);
-    var ly = cy + (r*0.68)*Math.sin(mid);
-    slices += '<path d="M'+xi1+','+yi1+' L'+x1+','+y1+' A'+r+','+r+' 0 '+large+',1 '+x2+','+y2+' L'+xi2+','+yi2+' A'+ri+','+ri+' 0 '+large+',0 '+xi1+','+yi1+' Z"'
-      +' fill="'+g.color+'" stroke="#fff" stroke-width="2">'
-      +'<title>'+g.nombre+': '+fmt(g.suma)+' ('+pct+'%)</title>'
-      +'</path>';
-    if(pct >= 8){
-      slices += '<text x="'+lx+'" y="'+ly+'" text-anchor="middle" dominant-baseline="middle"'
-        +' style="font-size:11px;font-weight:700;fill:#fff;pointer-events:none">'+pct+'%</text>';
-    }
-    angulo += sweep;
-  });
+    var ini = deg;
+    deg += frac * 360;
+    return g.color+' '+ini.toFixed(1)+'deg '+deg.toFixed(1)+'deg';
+  }).join(', ');
 
-  var svgHtml = '<svg viewBox="0 0 220 220" style="width:100%;max-width:220px;display:block;margin:0 auto 1rem">'+slices+'</svg>';
+  var pastel = '<div style="position:relative;width:200px;height:200px;margin:0 auto 1.2rem;border-radius:50%;'
+    +'background:conic-gradient('+paradas+');box-shadow:0 4px 18px rgba(0,0,0,.13)">'
+    // hueco central para efecto donut
+    +'<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);'
+    +'width:80px;height:80px;border-radius:50%;background:#fff;display:flex;flex-direction:column;'
+    +'align-items:center;justify-content:center;box-shadow:0 0 0 3px #f0f0ea inset">'
+    +'<span style="font-size:10px;color:#6B7280;font-weight:700;text-transform:uppercase;letter-spacing:.04em">Total</span>'
+    +'<span style="font-size:13px;font-weight:900;color:#1A1A2E;line-height:1.2">'+fmtC(totalGrupos)+'</span>'
+    +'</div></div>';
 
-  // Leyenda
+  // Leyenda con barras
   var leyenda = grupos.map(function(g){
     var pct = Math.round((g.suma/totalGrupos)*100);
-    return '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;font-size:13px">'
-      +'<span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:'+g.color+';margin-right:7px;vertical-align:middle"></span>'+g.nombre+'</span>'
-      +'<span style="font-weight:700;color:'+g.color+'">'+pct+'% &nbsp;<span style="color:var(--mgray);font-weight:400">'+fmt(g.suma)+'</span></span>'
-      +'</div>';
+    return '<div style="margin-bottom:.6rem">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'
+      +'<span style="font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px">'
+      +'<span style="width:13px;height:13px;border-radius:3px;background:'+g.color+';display:inline-block;flex-shrink:0"></span>'
+      +g.nombre+'</span>'
+      +'<span style="font-size:13px;font-weight:700;color:'+g.color+'">'+pct+'%&nbsp;'
+      +'<span style="color:#6B7280;font-weight:400">'+fmt(g.suma)+'</span></span>'
+      +'</div>'
+      +'<div style="height:7px;background:#E8E6DF;border-radius:99px;overflow:hidden">'
+      +'<div style="height:100%;width:'+pct+'%;background:'+g.color+';border-radius:99px;transition:width .5s"></div>'
+      +'</div></div>';
   }).join('');
 
-  el.innerHTML = svgHtml + leyenda;
+  el.innerHTML = pastel + leyenda;
 }
 
 function renderChart5030(){
