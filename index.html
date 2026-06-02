@@ -747,7 +747,11 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--ink);min-hei
       <div style="display:flex;gap:.5rem">
         <button class="btn btn-gold btn-w" onclick="addInv2()">+ Agregar al portafolio</button>
       </div>
-      <div id="inv2-list" style="margin-top:.85rem"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:.85rem;margin-bottom:.4rem">
+        <span id="inv2-update-status" style="font-size:11px;color:#6b7280"></span>
+        <button onclick="actualizarPreciosPortafolio()" style="background:#f0f9ff;border:1px solid #93c5fd;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;color:#1e40af;cursor:pointer" id="inv2-update-btn">🔄 Actualizar precios</button>
+      </div>
+      <div id="inv2-list"></div>
     </div>
 
     <!-- AHORROS E INVERSIONES BANCARIAS -->
@@ -960,6 +964,8 @@ function showTab(id, el){
     var tasaEl = document.getElementById('pat-tasa-cambio');
     if(tasaEl) tasaEl.value = tasaGuardada;
     renderPatrimonio();
+    // Auto-actualizar precios al abrir la página
+    if(inv2Data.length > 0) actualizarPreciosPortafolio();
   }
   if(id==='simulador'){ runSim(); }
   if(id==='inversion'){ renderPort(); }
@@ -1720,6 +1726,78 @@ function savePat(){
   }catch(e){}
 }
 
+async function actualizarPreciosPortafolio(){
+  if(!inv2Data.length) return;
+
+  var btn    = document.getElementById('inv2-update-btn');
+  var status = document.getElementById('inv2-update-status');
+  if(btn){ btn.disabled=true; btn.textContent='⏳ Actualizando...'; }
+  if(status){ status.textContent='Consultando Yahoo Finance para '+inv2Data.length+' activo(s)...'; status.style.color='#6b7280'; }
+
+  // Obtener tickers únicos
+  var tickers = inv2Data.map(function(x){ return x.ticker; }).filter(function(v,i,a){ return a.indexOf(v)===i; });
+  var precios = {};
+
+  // Fetch en paralelo con timeout por activo
+  await Promise.all(tickers.map(async function(ticker){
+    var yUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/'+ticker+'?interval=1d&range=1d';
+    var proxies = [
+      'https://corsproxy.io/?'+encodeURIComponent(yUrl),
+      'https://api.allorigins.win/raw?url='+encodeURIComponent(yUrl)
+    ];
+    for(var i=0; i<proxies.length; i++){
+      try{
+        var resp = await fetch(proxies[i], { signal: AbortSignal.timeout(8000) });
+        if(!resp.ok) continue;
+        var data = await resp.json();
+        var meta = data && data.chart && data.chart.result && data.chart.result[0] && data.chart.result[0].meta;
+        if(meta && meta.regularMarketPrice){
+          precios[ticker] = {
+            precio: meta.regularMarketPrice,
+            nombre: meta.longName || meta.shortName || ticker,
+            cambio: meta.regularMarketPrice - (meta.chartPreviousClose||meta.regularMarketPrice),
+            cambioPct: meta.chartPreviousClose ? ((meta.regularMarketPrice - meta.chartPreviousClose)/meta.chartPreviousClose*100) : 0
+          };
+          break;
+        }
+      }catch(e){ continue; }
+    }
+  }));
+
+  // Actualizar inv2Data con los precios obtenidos
+  var actualizados = 0;
+  var fallidos = [];
+  inv2Data.forEach(function(x){
+    if(precios[x.ticker]){
+      x.precioAnterior = x.precio;
+      x.precio = precios[x.ticker].precio;
+      x.total  = x.cant * x.precio;
+      x.nombreCompleto = precios[x.ticker].nombre;
+      x.cambio    = precios[x.ticker].cambio;
+      x.cambioPct = precios[x.ticker].cambioPct;
+      x.ultimaActualizacion = new Date().toLocaleTimeString('es-DO',{hour:'2-digit',minute:'2-digit'});
+      actualizados++;
+    } else {
+      fallidos.push(x.ticker);
+    }
+  });
+
+  savePat();
+  renderPatrimonio();
+
+  if(btn){ btn.disabled=false; btn.textContent='🔄 Actualizar precios'; }
+  var hora = new Date().toLocaleTimeString('es-DO',{hour:'2-digit',minute:'2-digit'});
+  if(status){
+    if(fallidos.length === 0){
+      status.textContent='✅ '+actualizados+' activo(s) actualizados · '+hora;
+      status.style.color='#15803d';
+    } else {
+      status.textContent='⚠️ '+actualizados+' ok · Sin precio: '+fallidos.join(', ')+' · '+hora;
+      status.style.color='#d97706';
+    }
+  }
+}
+
 function calcValorTotal(){
   var precio = parseFloat(document.getElementById('inv2-precio').value)||0;
   var cant   = parseFloat(document.getElementById('inv2-cant').value)||0;
@@ -1999,26 +2077,57 @@ function renderPatrimonio(){
     if(!inv2Data.length){ inv2El.innerHTML='<div class="empty">Sin activos registrados aún.</div>'; }
     else {
       inv2El.innerHTML=inv2Data.map(function(x){
-        var pct=totBolsa>0?Math.round((x.total/totBolsa)*100):0;
-        return '<div style="background:var(--lgray);border-radius:10px;padding:.75rem;margin-bottom:.45rem">'
+        var pct = totBolsa>0 ? Math.round((x.total/totBolsa)*100) : 0;
+        var cambioHtml = '';
+        if(x.cambio !== undefined){
+          var signo = x.cambio>=0?'+':'';
+          var col   = x.cambio>=0?'#15803d':'#dc2626';
+          var flecha= x.cambio>=0?'▲':'▼';
+          cambioHtml = '<span style="font-size:11px;font-weight:700;color:'+col+'"> '
+            +flecha+' '+signo+'$'+Math.abs(x.cambio).toFixed(2)
+            +' ('+signo+(x.cambioPct||0).toFixed(2)+'%)</span>';
+        }
+        var actualizadoHtml = x.ultimaActualizacion
+          ? '<span style="font-size:10px;color:#9ca3af"> · 🕐 '+x.ultimaActualizacion+'</span>'
+          : '';
+        var nombreHtml = x.nombreCompleto && x.nombreCompleto!==x.ticker
+          ? '<div style="font-size:11px;color:#6b7280;margin-top:1px">'+x.nombreCompleto+'</div>'
+          : '';
+        var precioAnteriorHtml = (x.precioAnterior && x.precioAnterior!==x.precio)
+          ? '<div style="font-size:10px;color:#9ca3af">Precio anterior: $'+x.precioAnterior.toFixed(2)+'</div>'
+          : '';
+        return '<div style="background:var(--lgray);border-radius:10px;padding:.85rem;margin-bottom:.5rem">'
           +'<div style="display:flex;justify-content:space-between;align-items:flex-start">'
-          +'<div>'
-          +'<div style="font-weight:900;font-size:16px">'+x.ticker
-          +' <a href="https://finance.yahoo.com/quote/'+x.ticker+'" target="_blank" title="Ver en Yahoo Finance" style="font-size:11px;color:var(--blue);text-decoration:none">🔗 Ver precio</a></div>'
-          +'<div style="font-size:12px;color:var(--mgray)">'+x.tipo+' · '+x.broker+' · '+x.cant+' uds · $'+x.precio.toFixed(2)+'/u</div>'
+          +'<div style="flex:1;min-width:0">'
+          +'<div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">'
+          +'<span style="font-weight:900;font-size:17px">'+x.ticker+'</span>'
+          +cambioHtml
+          +actualizadoHtml
+          +'<a href="https://finance.yahoo.com/quote/'+x.ticker+'" target="_blank" style="font-size:10px;color:var(--blue)">🔗 Yahoo</a>'
           +'</div>'
-          +'<div style="text-align:right">'
-          +'<div style="font-weight:900;font-size:15px;color:var(--blue)">$'+x.total.toFixed(2)+'</div>'
+          +nombreHtml
+          +'<div style="font-size:12px;color:var(--mgray);margin-top:3px">'+x.tipo+(x.broker?' · '+x.broker:'')
+          +' · <strong>'+x.cant+' posiciones</strong>'
+          +' · Precio: <strong style="color:var(--blue)">$'+x.precio.toFixed(2)+'</strong>/u</div>'
+          +precioAnteriorHtml
+          +'</div>'
+          +'<div style="text-align:right;flex-shrink:0;margin-left:.75rem">'
+          +'<div style="font-weight:900;font-size:18px;color:var(--blue)">$'+x.total.toFixed(2)+'</div>'
           +'<div style="font-size:11px;color:var(--mgray)">'+pct+'% del portafolio</div>'
-          +'<button onclick="removeInv2('+x.id+')" style="background:none;border:none;cursor:pointer;color:#ccc;font-size:14px;margin-top:3px">✕ Eliminar</button>'
+          +'<button onclick="removeInv2('+x.id+')" style="background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;cursor:pointer;color:#dc2626;font-size:11px;padding:3px 8px;margin-top:5px">✕ Eliminar</button>'
           +'</div></div>'
-          +'<div style="height:6px;background:#d1d5db;border-radius:99px;overflow:hidden;margin-top:6px">'
-          +'<div style="height:100%;width:'+pct+'%;background:var(--blue);border-radius:99px"></div></div>'
+          +'<div style="height:6px;background:#d1d5db;border-radius:99px;overflow:hidden;margin-top:8px">'
+          +'<div style="height:100%;width:'+pct+'%;background:var(--blue);border-radius:99px;transition:width .5s"></div></div>'
           +'</div>';
       }).join('');
     }
     if(totBolsa>0){
-      inv2El.innerHTML+='<div style="text-align:right;font-weight:700;font-size:14px;margin-top:.5rem;color:var(--blue)">Total bolsa: $'+totBolsa.toFixed(2)+'</div>';
+      var tasa2=getTasaCambio();
+      inv2El.innerHTML+='<div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-top:.6rem;padding:.5rem .75rem;background:#eff6ff;border-radius:8px">'
+        +'<span style="font-weight:700;color:var(--blue)">Total portafolio bolsa</span>'
+        +'<span><strong style="color:var(--blue);font-size:16px">$'+totBolsa.toFixed(2)+'</strong>'
+        +' <span style="color:#9ca3af">= '+fmtRD(totBolsa*tasa2)+'</span></span>'
+        +'</div>';
     }
   }
 
