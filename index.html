@@ -1743,10 +1743,46 @@ function addBanco(){
   document.getElementById('ban-ef').checked=false;
 }
 
+function editarBanco(id){
+  var item = banData.find(function(x){ return x.id===id; });
+  if(!item) return;
+
+  var monSim = item.moneda==='DOP'?'RD$':'USD $';
+
+  if(item.esEF){
+    var aviso = '🛡️ FONDO DE EMERGENCIA\n\n'
+      +'Este monto está marcado como Fondo de Emergencia.\n'
+      +'Recuerda: este dinero NO SE TOCA salvo emergencia real.\n'
+      +'Si lo utilizas, DEBES reponerlo como prioridad #1.\n\n'
+      +'Monto actual: '+monSim+item.monto.toLocaleString('en-US')+'\n\n'
+      +'¿Cuál es el nuevo monto? (escríbelo para continuar)';
+    var nuevoStr = prompt(aviso, item.monto);
+    if(nuevoStr===null) return; // canceló
+    var nuevo = parseFloat(nuevoStr);
+    if(isNaN(nuevo)||nuevo<0){ alert('Monto no válido. No se hicieron cambios.'); return; }
+    var motivo = prompt(
+      '📝 REGISTRO DE CAMBIO\n\nMonto anterior: '+monSim+item.monto.toLocaleString('en-US')+'\nNuevo monto:    '+monSim+nuevo.toLocaleString('en-US')+'\n\n¿Cuál es el motivo del cambio? (opcional — para tu historial)',
+      ''
+    );
+    item.monto = nuevo;
+    item.ultimoCambio = new Date().toLocaleDateString('es-DO');
+    item.motivoCambio = motivo||'Sin especificar';
+    savePat(); renderPatrimonio();
+    alert('✅ Monto actualizado a '+monSim+nuevo.toLocaleString('en-US')+'.\n\nFecha: '+item.ultimoCambio+'\nMotivo: '+(motivo||'Sin especificar')+'\n\n⚠️ Recuerda reponerlo cuando puedas.');
+  } else {
+    var nuevoStr2 = prompt('Editar monto de '+item.banco+'\nMonto actual: '+monSim+item.monto.toLocaleString('en-US')+'\n\nNuevo monto:', item.monto);
+    if(nuevoStr2===null) return;
+    var nuevo2 = parseFloat(nuevoStr2);
+    if(isNaN(nuevo2)||nuevo2<0){ alert('Monto no válido.'); return; }
+    item.monto = nuevo2;
+    savePat(); renderPatrimonio();
+  }
+}
+
 function removeBanco(id){
   var item = banData.find(function(x){ return x.id===id; });
   if(item && item.esEF){
-    if(!confirm('⚠️ FONDO DE EMERGENCIA — NO SE TOCA\n\nEstás a punto de eliminar una cuenta marcada como Fondo de Emergencia.\n\nRecuerda: este dinero es tu red de seguridad. Si lo eliminas o usas, DEBES reponerlo como prioridad #1.\n\n¿Confirmas que deseas eliminarlo?')) return;
+    if(!confirm('⚠️ FONDO DE EMERGENCIA — NO SE TOCA\n\nEstás a punto de ELIMINAR una cuenta marcada como Fondo de Emergencia.\n\nSi usaste este dinero, recuerda que DEBES reponerlo como prioridad #1 antes de cualquier otro gasto o inversión.\n\n¿Confirmas que deseas eliminarlo?')) return;
   }
   banData = banData.filter(function(x){ return x.id!==id; });
   savePat(); renderPatrimonio();
@@ -1895,10 +1931,15 @@ function renderPatrimonio(){
         return '<div style="background:'+(x.esEF?'#fffbeb':'var(--lgray)')+';border:'+(x.esEF?'1px solid #fcd34d':'1px solid transparent')+';border-radius:10px;padding:.75rem;margin-bottom:.45rem">'
           +'<div style="display:flex;justify-content:space-between;align-items:flex-start">'
           +'<div><div style="font-weight:700;font-size:14px">'+x.tipo+efBadge+'</div>'
-          +'<div style="font-size:12px;color:var(--mgray);margin-top:2px">'+x.banco+' '+tasaTxt+(venceTxt?' · '+venceTxt:'')+'</div></div>'
+          +'<div style="font-size:12px;color:var(--mgray);margin-top:2px">'+x.banco+' '+tasaTxt+(venceTxt?' · '+venceTxt:'')+'</div>'
+          +(x.ultimoCambio?'<div style="font-size:11px;color:#f59e0b;margin-top:2px">📝 Modificado: '+x.ultimoCambio+' — '+x.motivoCambio+'</div>':'')
+          +'</div>'
           +'<div style="text-align:right">'
           +'<div style="font-weight:900;font-size:15px;color:'+(x.esEF?'#92400e':'var(--green)')+'">'+( x.moneda==='DOP'?'RD$':'$' )+x.monto.toLocaleString('en-US')+'</div>'
-          +'<button onclick="removeBanco('+x.id+')" style="background:none;border:none;cursor:pointer;color:#ccc;font-size:13px;margin-top:3px">✕</button>'
+          +'<div style="display:flex;gap:.35rem;justify-content:flex-end;margin-top:5px">'
+          +'<button onclick="editarBanco('+x.id+')" style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;cursor:pointer;color:#0369a1;font-size:11px;font-weight:700;padding:3px 8px">✏️ Modificar</button>'
+          +'<button onclick="removeBanco('+x.id+')" style="background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;cursor:pointer;color:#dc2626;font-size:11px;font-weight:700;padding:3px 8px">✕ Eliminar</button>'
+          +'</div>'
           +'</div></div></div>';
       }).join('');
       var resumenBan='<div style="display:flex;justify-content:space-between;font-weight:700;font-size:13px;margin-top:.5rem;padding:.5rem;background:var(--lgray);border-radius:8px">';
