@@ -154,6 +154,63 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--ink);min-hei
 </style>
 </head>
 <body>
+<!-- SUPABASE SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+<!-- ═══ LOGIN OVERLAY ═══════════════════════════════════════════════ -->
+<div id="login-overlay" style="position:fixed;inset:0;background:#1A1A2E;display:flex;align-items:center;justify-content:center;z-index:9999;padding:1rem">
+  <div style="background:#fff;border-radius:20px;padding:2.5rem 2rem;width:100%;max-width:400px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5)">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:58px;font-weight:900;color:#1A1A2E;letter-spacing:6px;line-height:1">S<span style="color:#C9A84C">C</span>LF</div>
+    <div style="font-size:10px;letter-spacing:5px;color:#6B7280;text-transform:uppercase;margin-bottom:2rem;margin-top:.25rem">Sistema · Libertad Financiera</div>
+
+    <input id="login-email" type="email" placeholder="Correo electrónico"
+      style="width:100%;padding:.85rem 1rem;border:2px solid #E8E6DF;border-radius:10px;font-size:15px;margin-bottom:.75rem;outline:none;font-family:'Lato',sans-serif"
+      onfocus="this.style.borderColor='#C9A84C'" onblur="this.style.borderColor='#E8E6DF'"
+      value="jardialcantaraspc@gmail.com"/>
+
+    <div style="position:relative;margin-bottom:.5rem">
+      <input id="login-password" type="password" placeholder="Contraseña"
+        style="width:100%;padding:.85rem 3rem .85rem 1rem;border:2px solid #E8E6DF;border-radius:10px;font-size:15px;outline:none;font-family:'Lato',sans-serif"
+        onfocus="this.style.borderColor='#C9A84C'" onblur="this.style.borderColor='#E8E6DF'"
+        onkeydown="if(event.key==='Enter') loginSCLF()"/>
+      <button id="btn-eye" onclick="togglePassword()" type="button"
+        style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:18px;padding:0;line-height:1">👁</button>
+    </div>
+
+    <div id="login-error" style="font-size:13px;color:#C0392B;margin-bottom:.75rem;min-height:18px;text-align:left"></div>
+
+    <button id="login-btn" onclick="loginSCLF()" type="button"
+      style="width:100%;padding:.9rem;background:#1A1A2E;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:.75rem;letter-spacing:.05em;font-family:'Lato',sans-serif;transition:opacity .2s">
+      🔐 Entrar
+    </button>
+
+    <button onclick="loginGoogle()" type="button"
+      style="width:100%;padding:.85rem;background:#fff;color:#374151;border:2px solid #E8E6DF;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:1.25rem;display:flex;align-items:center;justify-content:center;gap:.6rem;font-family:'Lato',sans-serif;transition:border .2s"
+      onmouseover="this.style.borderColor='#C9A84C'" onmouseout="this.style.borderColor='#E8E6DF'">
+      <svg width="18" height="18" viewBox="0 0 48 48" style="flex-shrink:0">
+        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+      </svg>
+      Continuar con Google
+    </button>
+
+    <details style="text-align:left">
+      <summary style="font-size:12px;color:#9CA3AF;cursor:pointer;text-align:center;list-style:none">Primera vez — crear cuenta</summary>
+      <div style="margin-top:.75rem;padding:.85rem;background:#F9FAFB;border-radius:8px;font-size:13px;color:#374151;line-height:1.6">
+        Usa el email y contraseña de arriba (mín. 6 caracteres) y haz clic en <strong>Crear cuenta</strong>.
+        <button onclick="crearCuentaSCLF()" type="button"
+          style="width:100%;margin-top:.6rem;padding:.7rem;background:#C9A84C;color:#1A1A2E;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Lato',sans-serif">
+          Crear cuenta nueva
+        </button>
+      </div>
+    </details>
+  </div>
+</div>
+
+<!-- ═══ APP WRAPPER (oculto hasta login) ═════════════════════════════ -->
+<div id="app-wrapper" style="display:none">
 
 <!-- HEADER -->
 <div class="hdr">
@@ -163,7 +220,8 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--ink);min-hei
   </div>
   <div class="hdr-r">
     <strong>Jardi Alcántara</strong>
-    sistemasclf.com
+    <span id="auth-user-email" style="font-size:10px;display:block;color:rgba(255,255,255,.35);margin-top:1px"></span>
+    <button onclick="logoutSCLF()" style="background:none;border:1px solid rgba(255,255,255,.15);border-radius:5px;color:rgba(255,255,255,.4);font-size:10px;padding:1px 8px;cursor:pointer;margin-top:2px;font-family:'Lato',sans-serif;letter-spacing:.03em">🔓 Salir</button>
   </div>
 </div>
 
@@ -871,6 +929,162 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--ink);min-hei
 </div>
 
 <script>
+// ══ AUTH + SUPABASE SYNC ═════════════════════════════════════════════
+var SUPA_URL  = 'https://qtbbhtbmqkcpbvrnbxnq.supabase.co';
+var SUPA_KEY  = 'sb_publishable_aijqNbNTtEr0JFg0HFBRNQ_9o6oXYyR';
+var supaClient  = null;
+var currentUser = null;
+
+function initSupabase(){
+  if(window.supabase && !supaClient){
+    supaClient = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+  }
+}
+
+async function initAuth(){
+  initSupabase();
+  if(!supaClient){ mostrarApp(); return; }
+  try{
+    // Manejar callback OAuth de Google (hash en URL)
+    if(window.location.hash && window.location.hash.includes('access_token')){
+      await supaClient.auth.getSession(); // SDK procesa el hash automáticamente
+    }
+    var { data: { session } } = await supaClient.auth.getSession();
+    if(session){
+      currentUser = session.user;
+      await cargarDatosNube();
+      mostrarApp();
+    } else {
+      mostrarLogin();
+    }
+  }catch(e){
+    console.error('Auth error:', e);
+    mostrarApp(); // fallback si falla SDK
+  }
+}
+
+function mostrarLogin(){
+  var lo = document.getElementById('login-overlay');
+  var aw = document.getElementById('app-wrapper');
+  if(lo) lo.style.display = 'flex';
+  if(aw) aw.style.display = 'none';
+}
+
+function mostrarApp(){
+  var lo = document.getElementById('login-overlay');
+  var aw = document.getElementById('app-wrapper');
+  if(lo) lo.style.display = 'none';
+  if(aw) aw.style.display = 'block';
+  // Mostrar email en header
+  var emailEl = document.getElementById('auth-user-email');
+  if(emailEl && currentUser) emailEl.textContent = currentUser.email;
+  initAppContent();
+}
+
+async function loginSCLF(){
+  var email    = (document.getElementById('login-email').value||'').trim();
+  var password = document.getElementById('login-password').value||'';
+  var errEl    = document.getElementById('login-error');
+  var btn      = document.getElementById('login-btn');
+  errEl.style.color = '#C0392B';
+  errEl.textContent = '';
+  if(!email||!password){ errEl.textContent='❌ Completa email y contraseña'; return; }
+  btn.disabled=true; btn.textContent='Entrando...';
+  try{
+    var { data, error } = await supaClient.auth.signInWithPassword({ email:email, password:password });
+    if(error) throw error;
+    currentUser = data.user;
+    await cargarDatosNube();
+    mostrarApp();
+  }catch(e){
+    errEl.textContent = '❌ '+(e.message||'Error al iniciar sesión');
+    btn.disabled=false; btn.textContent='🔐 Entrar';
+  }
+}
+
+async function loginGoogle(){
+  initSupabase();
+  if(!supaClient) return;
+  try{
+    await supaClient.auth.signInWithOAuth({
+      provider:'google',
+      options:{ redirectTo: window.location.href.split('#')[0].split('?')[0] }
+    });
+  }catch(e){
+    var errEl = document.getElementById('login-error');
+    if(errEl){ errEl.style.color='#C0392B'; errEl.textContent='❌ Error con Google: '+e.message; }
+  }
+}
+
+async function crearCuentaSCLF(){
+  var email    = (document.getElementById('login-email').value||'').trim();
+  var password = document.getElementById('login-password').value||'';
+  var errEl    = document.getElementById('login-error');
+  errEl.style.color = '#C0392B';
+  errEl.textContent = '';
+  if(!email||!password){ errEl.textContent='❌ Completa email y contraseña'; return; }
+  if(password.length < 6){ errEl.textContent='❌ Contraseña mínimo 6 caracteres'; return; }
+  try{
+    var { data, error } = await supaClient.auth.signUp({ email:email, password:password });
+    if(error) throw error;
+    errEl.style.color = '#1B8A4C';
+    errEl.textContent = '✅ Cuenta creada. Revisa tu email para confirmar, luego entra normalmente.';
+  }catch(e){
+    errEl.style.color = '#C0392B';
+    errEl.textContent = '❌ '+(e.message||'Error al crear cuenta');
+  }
+}
+
+async function logoutSCLF(){
+  if(supaClient) await supaClient.auth.signOut();
+  currentUser = null;
+  mostrarLogin();
+}
+
+async function cargarDatosNube(){
+  if(!supaClient||!currentUser) return;
+  try{
+    var { data, error } = await supaClient
+      .from('sclf_user_data')
+      .select('data_key,data_json');
+    if(data && data.length>0){
+      data.forEach(function(row){
+        try{ localStorage.setItem(row.data_key, JSON.stringify(row.data_json)); }catch(e){}
+      });
+      recargarVariables();
+    }
+  }catch(e){ console.error('Error cargando nube:', e); }
+}
+
+async function syncNube(key, value){
+  if(!supaClient||!currentUser) return;
+  try{
+    await supaClient.from('sclf_user_data').upsert(
+      { user_id:currentUser.id, data_key:key, data_json:value, updated_at:new Date().toISOString() },
+      { onConflict:'user_id,data_key' }
+    );
+  }catch(e){ console.warn('Sync error:', key, e); }
+}
+
+function recargarVariables(){
+  try{ txData   = JSON.parse(localStorage.getItem('sclf2_tx')   ||'[]'); }catch(e){ txData=[]; }
+  try{ portData = JSON.parse(localStorage.getItem('sclf2_port') ||'[]'); }catch(e){ portData=[]; }
+  try{ proyData = JSON.parse(localStorage.getItem('sclf2_proy') ||'{}'); }catch(e){ proyData={}; }
+  try{ inv2Data = JSON.parse(localStorage.getItem('sclf_inv2')  ||'[]'); }catch(e){ inv2Data=[]; }
+  try{ banData  = JSON.parse(localStorage.getItem('sclf_ban')   ||'[]'); }catch(e){ banData=[]; }
+  try{ sobData  = JSON.parse(localStorage.getItem('sclf_sob')   ||'{}'); }catch(e){ sobData={}; }
+}
+
+function togglePassword(){
+  var inp = document.getElementById('login-password');
+  var btn = document.getElementById('btn-eye');
+  if(!inp) return;
+  if(inp.type==='password'){ inp.type='text'; if(btn) btn.textContent='🙈'; }
+  else { inp.type='password'; if(btn) btn.textContent='👁'; }
+}
+</script>
+
+<script>
 // ══ ESTADO ══════════════════════════════════════════════════════════
 var txData   = [];
 var portData = [];
@@ -884,6 +1098,9 @@ function save(){
     localStorage.setItem('sclf2_tx',   JSON.stringify(txData));
     localStorage.setItem('sclf2_port', JSON.stringify(portData));
     localStorage.setItem('sclf2_proy', JSON.stringify(proyData));
+    syncNube('sclf2_tx',   txData);
+    syncNube('sclf2_port', portData);
+    syncNube('sclf2_proy', proyData);
   }catch(e){}
 }
 
@@ -1234,11 +1451,11 @@ function updateFondo(){
     resumen.style.display = 'none';
   }
 
-  // Guardar en localStorage
+  // Guardar en localStorage + nube
   try{
-    localStorage.setItem('sclf_fondo', JSON.stringify({
-      metaDOP:metaDOP, acuDOP:acuDOP, metaUSD:metaUSD, acuUSD:acuUSD
-    }));
+    var fondoObj = { metaDOP:metaDOP, acuDOP:acuDOP, metaUSD:metaUSD, acuUSD:acuUSD };
+    localStorage.setItem('sclf_fondo', JSON.stringify(fondoObj));
+    syncNube('sclf_fondo', fondoObj);
   }catch(e){}
 }
 
@@ -1460,7 +1677,7 @@ function renderNiveles(){
 }
 
 // ══ INIT ═════════════════════════════════════════════════════════════
-document.addEventListener('DOMContentLoaded', function(){
+function initAppContent(){
   // Fecha de hoy
   var hoy = new Date().toISOString().split('T')[0];
   var fechaEl = document.getElementById('tx-fecha');
@@ -1469,10 +1686,10 @@ document.addEventListener('DOMContentLoaded', function(){
   // Restaurar fondo de emergencia
   try{
     var fondoSaved = JSON.parse(localStorage.getItem('sclf_fondo')||'{}');
-    if(fondoSaved.metaDOP) document.getElementById('fondo-meta-dop').value = fondoSaved.metaDOP;
-    if(fondoSaved.acuDOP)  document.getElementById('fondo-acu-dop').value  = fondoSaved.acuDOP;
-    if(fondoSaved.metaUSD) document.getElementById('fondo-meta-usd').value = fondoSaved.metaUSD;
-    if(fondoSaved.acuUSD)  document.getElementById('fondo-acu-usd').value  = fondoSaved.acuUSD;
+    if(fondoSaved.metaDOP){ var el=document.getElementById('fondo-meta-dop'); if(el) el.value=fondoSaved.metaDOP; }
+    if(fondoSaved.acuDOP) { var el=document.getElementById('fondo-acu-dop');  if(el) el.value=fondoSaved.acuDOP;  }
+    if(fondoSaved.metaUSD){ var el=document.getElementById('fondo-meta-usd'); if(el) el.value=fondoSaved.metaUSD; }
+    if(fondoSaved.acuUSD) { var el=document.getElementById('fondo-acu-usd');  if(el) el.value=fondoSaved.acuUSD;  }
     if(fondoSaved.metaDOP||fondoSaved.metaUSD) updateFondo();
   }catch(e){}
 
@@ -1491,6 +1708,18 @@ document.addEventListener('DOMContentLoaded', function(){
   var hoyMes = new Date().toISOString().slice(0,7);
   var mesEl = document.getElementById('proy-mes');
   if(mesEl) mesEl.value = hoyMes;
+
+  // Restaurar tasa de cambio
+  try{
+    var tasaGuardada = parseFloat(localStorage.getItem('sclf_tasa_usd')||'60');
+    var tasaEl = document.getElementById('pat-tasa-cambio');
+    if(tasaEl) tasaEl.value = tasaGuardada;
+  }catch(e){}
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  // El init real ocurre en initAuth() → mostrarApp() → initAppContent()
+  initAuth();
 });
 
 // ══ PROYECCIÓN ═══════════════════════════════════════════════════════
@@ -1723,6 +1952,9 @@ function savePat(){
     localStorage.setItem('sclf_inv2', JSON.stringify(inv2Data));
     localStorage.setItem('sclf_ban',  JSON.stringify(banData));
     localStorage.setItem('sclf_sob',  JSON.stringify(sobData));
+    syncNube('sclf_inv2', inv2Data);
+    syncNube('sclf_ban',  banData);
+    syncNube('sclf_sob',  sobData);
   }catch(e){}
 }
 
@@ -2014,7 +2246,10 @@ function getTasaCambio(){
 
 function saveTasaCambio(){
   var val = getTasaCambio();
-  try{ localStorage.setItem('sclf_tasa_usd', val); }catch(e){}
+  try{
+    localStorage.setItem('sclf_tasa_usd', val);
+    syncNube('sclf_tasa_usd', val);
+  }catch(e){}
   var infoEl = document.getElementById('pat-tasa-info');
   if(infoEl) infoEl.textContent = 'Actualizado manualmente · 1 USD = RD$'+val.toFixed(2);
 }
@@ -2236,5 +2471,6 @@ function recalcProyTotals(){
   setText('proy-gas-total', fmtRD(totalGas));
 }
 </script>
+</div><!-- /app-wrapper -->
 </body>
 </html>
