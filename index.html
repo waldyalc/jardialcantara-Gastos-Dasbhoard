@@ -692,21 +692,44 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--ink);min-hei
       <div class="g2" style="margin-bottom:.75rem">
         <div class="fl" style="margin-bottom:0">
           <label>Ticker / Símbolo</label>
-          <input type="text" id="inv2-ticker" placeholder="VOO, AAPL, BTC..." style="text-transform:uppercase"/>
+          <input type="text" id="inv2-ticker" placeholder="VOO, AAPL, BTC-USD..." style="text-transform:uppercase"
+            oninput="this.value=this.value.toUpperCase()"
+            onkeydown="if(event.key==='Enter'||event.key==='Tab') fetchPrecioYahoo()"/>
         </div>
         <div class="fl" style="margin-bottom:0">
           <label>Broker / Plataforma</label>
           <input type="text" id="inv2-broker" placeholder="IBKR, Schwab, Robinhood..."/>
         </div>
       </div>
+      <!-- BUSCADOR DE PRECIO -->
+      <div id="inv2-precio-box" style="background:#eff6ff;border:1.5px solid #93c5fd;border-radius:10px;padding:.85rem;margin-bottom:.75rem">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">
+          <span style="font-size:12px;font-weight:700;color:#1e40af;text-transform:uppercase;letter-spacing:.05em">📡 Precio en tiempo real</span>
+          <span id="inv2-precio-estado" style="font-size:11px;color:#6b7280"></span>
+        </div>
+        <div style="display:flex;gap:.5rem;align-items:flex-end;flex-wrap:wrap">
+          <div style="flex:1;min-width:120px">
+            <div style="font-size:10px;font-weight:700;color:#374151;margin-bottom:3px;text-transform:uppercase">Precio actual (USD)</div>
+            <input type="number" id="inv2-precio" placeholder="0.00" inputmode="decimal" min="0" step="0.01"
+              style="width:100%;padding:10px 12px;border:1.5px solid #93c5fd;border-radius:8px;font-size:18px;font-weight:900;color:#1e40af;background:#fff"/>
+          </div>
+          <button id="inv2-fetch-btn" onclick="fetchPrecioYahoo()" class="btn btn-ink" style="height:44px;white-space:nowrap;font-size:13px">
+            📡 Obtener precio
+          </button>
+        </div>
+        <div id="inv2-precio-detalle" style="margin-top:.5rem;font-size:12px;color:#374151;display:none"></div>
+      </div>
+
       <div class="g2" style="margin-bottom:.75rem">
         <div class="fl" style="margin-bottom:0">
-          <label>Cantidad (unidades)</label>
-          <input type="number" id="inv2-cant" placeholder="0" inputmode="decimal" min="0" step="0.0001"/>
+          <label>Cantidad de posiciones (unidades)</label>
+          <input type="number" id="inv2-cant" placeholder="0" inputmode="decimal" min="0" step="0.0001"
+            oninput="calcValorTotal()"/>
         </div>
         <div class="fl" style="margin-bottom:0">
-          <label>Valor actual por unidad (USD)</label>
-          <input type="number" id="inv2-precio" placeholder="0.00" inputmode="decimal" min="0" step="0.01"/>
+          <label>Valor total estimado (USD)</label>
+          <input type="number" id="inv2-valor-total" placeholder="0.00" readonly
+            style="background:#f9fafb;font-weight:700;color:#15803d"/>
         </div>
       </div>
       <div class="fl">
@@ -722,8 +745,7 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--ink);min-hei
         </select>
       </div>
       <div style="display:flex;gap:.5rem">
-        <button class="btn btn-ink btn-w" onclick="addInv2()">+ Agregar activo</button>
-        <a id="inv2-buscar" href="https://finance.yahoo.com" target="_blank" class="btn btn-outline btn-sm" style="white-space:nowrap;display:flex;align-items:center" onclick="abrirBuscador()">🔍 Buscar precio</a>
+        <button class="btn btn-gold btn-w" onclick="addInv2()">+ Agregar al portafolio</button>
       </div>
       <div id="inv2-list" style="margin-top:.85rem"></div>
     </div>
@@ -1698,10 +1720,89 @@ function savePat(){
   }catch(e){}
 }
 
-function abrirBuscador(){
+function calcValorTotal(){
+  var precio = parseFloat(document.getElementById('inv2-precio').value)||0;
+  var cant   = parseFloat(document.getElementById('inv2-cant').value)||0;
+  var total  = precio * cant;
+  var el = document.getElementById('inv2-valor-total');
+  if(el) el.value = total > 0 ? total.toFixed(2) : '';
+}
+
+// Actualiza total cuando cambia el precio también
+document.addEventListener('DOMContentLoaded', function(){
+  var precioEl = document.getElementById('inv2-precio');
+  if(precioEl) precioEl.addEventListener('input', calcValorTotal);
+});
+
+async function fetchPrecioYahoo(){
   var ticker = (document.getElementById('inv2-ticker').value||'').trim().toUpperCase();
-  var url = ticker ? 'https://finance.yahoo.com/quote/'+ticker : 'https://finance.yahoo.com';
-  document.getElementById('inv2-buscar').href = url;
+  if(!ticker){ alert('Ingresa el ticker primero. Ej: VOO, AAPL, BTC-USD'); return; }
+
+  var btn    = document.getElementById('inv2-fetch-btn');
+  var estado = document.getElementById('inv2-precio-estado');
+  var detalle= document.getElementById('inv2-precio-detalle');
+
+  btn.textContent = '⏳ Buscando...';
+  btn.disabled = true;
+  estado.textContent = 'Consultando Yahoo Finance...';
+  estado.style.color = '#6b7280';
+  if(detalle) detalle.style.display='none';
+
+  // Intentar con corsproxy.io → si falla, intentar con allorigins
+  var yUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/'+ticker+'?interval=1d&range=1d';
+  var proxies = [
+    'https://corsproxy.io/?'+encodeURIComponent(yUrl),
+    'https://api.allorigins.win/raw?url='+encodeURIComponent(yUrl)
+  ];
+
+  var precio = null;
+  var nombre = ticker;
+  var moneda = 'USD';
+  var cambio = null;
+  var cambioPct = null;
+
+  for(var i=0; i<proxies.length; i++){
+    try{
+      var resp = await fetch(proxies[i], { signal: AbortSignal.timeout(7000) });
+      if(!resp.ok) continue;
+      var data = await resp.json();
+      var meta = data && data.chart && data.chart.result && data.chart.result[0] && data.chart.result[0].meta;
+      if(meta && meta.regularMarketPrice){
+        precio      = meta.regularMarketPrice;
+        nombre      = meta.longName || meta.shortName || ticker;
+        moneda      = meta.currency || 'USD';
+        cambio      = meta.regularMarketPrice - meta.chartPreviousClose;
+        cambioPct   = ((cambio / meta.chartPreviousClose)*100);
+        break;
+      }
+    }catch(e){ continue; }
+  }
+
+  btn.textContent = '📡 Obtener precio';
+  btn.disabled = false;
+
+  if(precio !== null){
+    document.getElementById('inv2-precio').value = precio.toFixed(2);
+    calcValorTotal();
+    estado.textContent = '✅ Precio obtenido de Yahoo Finance';
+    estado.style.color = '#15803d';
+    if(detalle){
+      var signo = cambio>=0?'+':'';
+      detalle.style.display='block';
+      detalle.innerHTML = '<strong>'+nombre+'</strong> &nbsp;·&nbsp; '
+        +'<span style="color:#374151">'+moneda+' $'+precio.toFixed(2)+'</span>'
+        +' &nbsp;·&nbsp; Cambio hoy: <span style="color:'+(cambio>=0?'#15803d':'#dc2626')+'">'+signo+cambio.toFixed(2)+' ('+signo+cambioPct.toFixed(2)+'%)</span>'
+        +' &nbsp;·&nbsp; <small style="color:#9ca3af">Fuente: Yahoo Finance · '+new Date().toLocaleTimeString('es-DO')+'</small>';
+    }
+  } else {
+    estado.textContent = '❌ No se pudo obtener el precio';
+    estado.style.color = '#dc2626';
+    if(detalle){
+      detalle.style.display='block';
+      detalle.innerHTML = 'Verifica el ticker (ej: BTC-USD, VOO, AAPL) o ingrésalo manualmente. '
+        +'<a href="https://finance.yahoo.com/quote/'+ticker+'" target="_blank" style="color:#1e40af">Ver en Yahoo Finance →</a>';
+    }
+  }
 }
 
 function addInv2(){
@@ -1711,12 +1812,16 @@ function addInv2(){
   var precio = parseFloat(document.getElementById('inv2-precio').value)||0;
   var tipo   = document.getElementById('inv2-tipo').value;
   if(!ticker){ alert('Ingresa el ticker del activo'); return; }
-  if(!cant||!precio){ alert('Ingresa cantidad y valor actual'); return; }
-  inv2Data.push({ id:Date.now(), ticker:ticker, broker:broker, cant:cant, precio:precio, tipo:tipo, total:cant*precio });
+  if(!cant)  { alert('Ingresa la cantidad de posiciones que tienes'); return; }
+  if(!precio){ alert('Ingresa el precio o usa "📡 Obtener precio" para traerlo de Yahoo Finance'); return; }
+  inv2Data.push({ id:Date.now(), ticker:ticker, broker:broker, cant:cant, precio:precio, tipo:tipo, total:cant*precio, fechaRegistro: new Date().toLocaleDateString('es-DO') });
   savePat(); renderPatrimonio();
   document.getElementById('inv2-ticker').value='';
   document.getElementById('inv2-cant').value='';
   document.getElementById('inv2-precio').value='';
+  document.getElementById('inv2-valor-total').value='';
+  var det=document.getElementById('inv2-precio-detalle'); if(det) det.style.display='none';
+  var est=document.getElementById('inv2-precio-estado'); if(est) est.textContent='';
 }
 
 function removeInv2(id){
