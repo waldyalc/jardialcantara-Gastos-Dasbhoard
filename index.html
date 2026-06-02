@@ -610,10 +610,27 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--ink);min-hei
 <!-- ══════ PATRIMONIO ══════ -->
 <div class="panel" id="panel-patrimonio">
 
+  <!-- TIPO DE CAMBIO -->
+  <div style="background:#fff;border:1.5px solid #DDD8CC;border-radius:12px;padding:.85rem 1.1rem;margin-bottom:.85rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem">
+    <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
+      <span style="font-size:13px;font-weight:700;color:var(--dgray)">💱 Tipo de cambio USD → RD$</span>
+      <div style="display:flex;align-items:center;gap:.4rem">
+        <span style="font-size:13px;color:var(--mgray)">1 USD =</span>
+        <input type="number" id="pat-tasa-cambio" value="60" min="1" step="0.01" inputmode="decimal"
+          style="width:90px;padding:6px 10px;border:1.5px solid #DDD8CC;border-radius:8px;font-size:15px;font-weight:700;color:var(--ink)"
+          oninput="saveTasaCambio();renderPatrimonio()"/>
+        <span style="font-size:13px;color:var(--mgray)">RD$</span>
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="fetchTasaBCRD()" style="font-size:12px">🔄 Consultar Banco Central</button>
+    </div>
+    <div id="pat-tasa-info" style="font-size:11px;color:var(--mgray)">Actualiza la tasa según el Banco Central de la República Dominicana</div>
+  </div>
+
   <!-- RESUMEN TOTAL -->
   <div id="pat-resumen" style="background:linear-gradient(135deg,#1A1A2E,#1a237e);border-radius:14px;padding:1.4rem;margin-bottom:1rem;color:#fff">
-    <div style="font-size:11px;letter-spacing:.1em;color:rgba(255,255,255,.4);text-transform:uppercase;margin-bottom:.6rem">📊 Patrimonio Total Neto</div>
+    <div style="font-size:11px;letter-spacing:.1em;color:rgba(255,255,255,.4);text-transform:uppercase;margin-bottom:.6rem">📊 Patrimonio Total Neto en RD$</div>
     <div style="font-family:'Barlow Condensed',sans-serif;font-size:52px;font-weight:900;color:var(--gold);line-height:1" id="pat-total-neto">RD$0</div>
+    <div style="font-size:11px;color:rgba(255,255,255,.35);margin-top:4px" id="pat-total-desglose">Todo convertido a RD$ usando la tasa registrada</div>
     <div class="g4" style="margin-top:1rem;gap:.65rem">
       <div style="background:rgba(255,255,255,.06);border-radius:10px;padding:.75rem;text-align:center">
         <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:3px">BOLSA</div>
@@ -916,7 +933,12 @@ function showTab(id, el){
   if(id==='presupuesto'){ renderTx(); renderChartCats(); renderChart5030(); }
   if(id==='flujo'){ renderFlujo(); }
   if(id==='proyeccion'){ renderProyeccion(); }
-  if(id==='patrimonio'){ renderPatrimonio(); }
+  if(id==='patrimonio'){
+    var tasaGuardada = parseFloat(localStorage.getItem('sclf_tasa_usd')||'60');
+    var tasaEl = document.getElementById('pat-tasa-cambio');
+    if(tasaEl) tasaEl.value = tasaGuardada;
+    renderPatrimonio();
+  }
   if(id==='simulador'){ runSim(); }
   if(id==='inversion'){ renderPort(); }
   if(id==='sistema'){ renderPilares(); renderNiveles(); }
@@ -1765,6 +1787,27 @@ function guardarDestinoSobrante(){
   renderPatrimonio();
 }
 
+function getTasaCambio(){
+  var el = document.getElementById('pat-tasa-cambio');
+  var val = parseFloat(el ? el.value : 0) || 60;
+  return val;
+}
+
+function saveTasaCambio(){
+  var val = getTasaCambio();
+  try{ localStorage.setItem('sclf_tasa_usd', val); }catch(e){}
+  var infoEl = document.getElementById('pat-tasa-info');
+  if(infoEl) infoEl.textContent = 'Actualizado manualmente · 1 USD = RD$'+val.toFixed(2);
+}
+
+function fetchTasaBCRD(){
+  var infoEl = document.getElementById('pat-tasa-info');
+  if(infoEl) infoEl.textContent = '⏳ Abriendo página del Banco Central...';
+  // Abrir la página del Banco Central para consultar la tasa oficial
+  window.open('https://www.bancentral.gov.do/a/d/2472-tasa-de-cambio-del-mercado-cambiario', '_blank');
+  if(infoEl) infoEl.textContent = '📌 Consulta la tasa en el Banco Central y actualiza el campo manualmente.';
+}
+
 function renderPatrimonio(){
   // ── Fondo de emergencia (desde el formulario de presupuesto) ──
   var efDOPacu  = parseFloat(localStorage.getItem('_ef_dop_acu')||'0');
@@ -1877,15 +1920,29 @@ function renderPatrimonio(){
   recalcSobrante();
 
   // ── Totales generales ──
-  setText('pat-tot-bolsa','$'+totBolsa.toFixed(0));
-  setText('pat-tot-banco',fmtRD(totBanDOP)+(totBanUSD>0?' + $'+totBanUSD.toFixed(0):''));
-  setText('pat-tot-ef',fmtRD(efDOPacu)+(efUSDacu>0?' + $'+efUSDacu.toFixed(0):''));
-  setText('pat-tot-sobrante',fmtRD(sobrante));
+  // Tasa de cambio
+  var tasa = getTasaCambio();
+
+  // Convertir todo a RD$
+  var bolsaEnRD   = totBolsa * tasa;
+  var banUSDenRD  = totBanUSD * tasa;
+  var efUSDenRD   = efUSDacu * tasa;
+  var netoRD      = totBanDOP + banUSDenRD + efDOPacu + efUSDenRD + bolsaEnRD;
+
+  setText('pat-tot-bolsa', '$'+totBolsa.toFixed(0)+(totBolsa>0?' = '+fmtRD(bolsaEnRD):''));
+  setText('pat-tot-banco', fmtRD(totBanDOP + banUSDenRD));
+  setText('pat-tot-ef',    fmtRD(efDOPacu + efUSDenRD));
+  setText('pat-tot-sobrante', fmtRD(sobrante));
   var sobTot=document.getElementById('pat-tot-sobrante');
   if(sobTot) sobTot.style.color=sobrante>0?'#27c987':'#f25563';
-  // Patrimonio neto total (en RD$, bolsa en USD se muestra aparte)
-  var netoRD=totBanDOP+efDOPacu;
-  setText('pat-total-neto',fmtRD(netoRD)+(totBolsa>0?' + $'+totBolsa.toFixed(0)+' USD':''));
+
+  setText('pat-total-neto', fmtRD(netoRD));
+  setText('pat-total-desglose',
+    'Tasa: 1 USD = RD$'+tasa.toFixed(2)+
+    (totBolsa>0?' · Bolsa: $'+totBolsa.toFixed(0)+' = '+fmtRD(bolsaEnRD):'') +
+    (totBanUSD>0?' · Banco USD: $'+totBanUSD.toFixed(0)+' = '+fmtRD(banUSDenRD):'') +
+    (efUSDacu>0?' · EF USD: $'+efUSDacu.toFixed(0)+' = '+fmtRD(efUSDenRD):'')
+  );
 }
 
 function recalcProyTotals(){
