@@ -716,8 +716,9 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--ink);min-hei
         <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900" id="pat-tot-sobrante" style="color:#27c987">RD$0</div>
       </div>
       <div style="background:rgba(124,58,237,.2);border-radius:10px;padding:.75rem;text-align:center;border:1px solid rgba(167,139,250,.3)">
-        <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:3px">INMUEBLES+EMP</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:3px">🏘️ ACTIVOS</div>
         <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;color:#a78bfa" id="pat-tot-activos">RD$0</div>
+        <div id="pat-tot-activos-breakdown" style="font-size:9px;color:rgba(255,255,255,.35);margin-top:3px;line-height:1.4"></div>
       </div>
     </div>
   </div>
@@ -902,7 +903,10 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--ink);min-hei
 
   <!-- ══ OTROS ACTIVOS: INMUEBLES Y EMPRESAS ══════════════════════════ -->
   <div class="card" style="border-left:4px solid #7c3aed">
-    <div class="ct">🏘️ Otros Activos · Inmuebles y Empresas</div>
+    <div class="ct">🏘️ Otros Activos · Inmuebles, Empresas y Vehículos</div>
+
+    <!-- GRÁFICO DE DISTRIBUCIÓN DE ACTIVOS -->
+    <div id="pat-activos-chart" style="display:none;background:var(--lgray);border-radius:12px;padding:.85rem;margin-bottom:.85rem"></div>
 
     <!-- FORMULARIO -->
     <div style="background:var(--lgray);border-radius:12px;padding:1rem;margin-bottom:1rem">
@@ -2560,9 +2564,12 @@ function renderPatrimonio(){
   var efDOPtotal = efDOPacu; // = totEFbanDOP (calculado al inicio desde banData)
   var efUSDtotal = efUSDacu; // = totEFbanUSD (calculado al inicio desde banData)
 
-  // Otros activos: inmuebles + empresas (valor estimado hoy en RD$)
-  var totActivosRD = (typeof activosData!=='undefined'?activosData:[])
-    .reduce(function(s,x){ return s + calcValorActivo(x); }, 0);
+  // Otros activos: inmuebles + empresas + vehículos (valor estimado hoy en RD$)
+  var _act = typeof activosData!=='undefined'?activosData:[];
+  var totInmRD = _act.filter(function(x){return x.categoria==='inmueble';}).reduce(function(s,x){return s+calcValorActivo(x);},0);
+  var totEmpRD = _act.filter(function(x){return x.categoria==='empresa'; }).reduce(function(s,x){return s+calcValorActivo(x);},0);
+  var totVehRD = _act.filter(function(x){return x.categoria==='vehiculo';}).reduce(function(s,x){return s+calcValorActivo(x);},0);
+  var totActivosRD = totInmRD + totEmpRD + totVehRD;
 
   // Convertir todo a RD$
   var bolsaEnRD     = totBolsa   * tasa;
@@ -2581,6 +2588,68 @@ function renderPatrimonio(){
   var sobTot=document.getElementById('pat-tot-sobrante');
   if(sobTot) sobTot.style.color=sobrante>0?'#27c987':'#f25563';
   setText('pat-tot-activos', fmtRD(Math.round(totActivosRD)));
+
+  // ── Breakdown % en el card del dashboard ──
+  var bkdEl = document.getElementById('pat-tot-activos-breakdown');
+  if(bkdEl){
+    if(totActivosRD > 0){
+      var piInm=Math.round(totInmRD/totActivosRD*100);
+      var piEmp=Math.round(totEmpRD/totActivosRD*100);
+      var piVeh=100-piInm-piEmp;
+      bkdEl.innerHTML=(piInm>0?'🏠 '+piInm+'%':'')+
+                      (piEmp>0?' · 🏢 '+piEmp+'%':'')+
+                      (piVeh>0?' · 🚗 '+piVeh+'%':'');
+    } else { bkdEl.textContent=''; }
+  }
+
+  // ── Gráfico de distribución de activos (donut + leyenda) ──
+  var chartEl = document.getElementById('pat-activos-chart');
+  if(chartEl){
+    if(totActivosRD <= 0){ chartEl.style.display='none'; }
+    else {
+      chartEl.style.display='block';
+      var tipos=[
+        {label:'🏠 Inmuebles', val:totInmRD, color:'#7c3aed'},
+        {label:'🏢 Empresas',  val:totEmpRD, color:'#1e40af'},
+        {label:'🚗 Vehículos', val:totVehRD, color:'#b91c1c'}
+      ].filter(function(t){return t.val>0;});
+      // Conic-gradient donut
+      var deg2=0;
+      var paradas=tipos.map(function(t){
+        var frac=t.val/totActivosRD;
+        var ini=deg2; deg2+=frac*360;
+        return t.color+' '+ini.toFixed(1)+'deg '+deg2.toFixed(1)+'deg';
+      }).join(', ');
+      var donut='<div style="width:90px;height:90px;border-radius:50%;'
+        +'background:conic-gradient('+paradas+');'
+        +'flex-shrink:0;position:relative">'
+        +'<div style="position:absolute;inset:18px;border-radius:50%;background:var(--lgray)"></div>'
+        +'</div>';
+      var leyenda=tipos.map(function(t){
+        var p=Math.round(t.val/totActivosRD*100);
+        return '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">'
+          +'<div style="display:flex;align-items:center;gap:6px">'
+            +'<div style="width:11px;height:11px;border-radius:3px;background:'+t.color+';flex-shrink:0"></div>'
+            +'<span style="font-size:12px;color:#374151;font-weight:600">'+t.label+'</span>'
+          +'</div>'
+          +'<div style="display:flex;align-items:center;gap:.5rem">'
+            +'<span style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:900;color:'+t.color+'">'+p+'%</span>'
+            +'<span style="font-size:11px;color:#9ca3af;min-width:80px;text-align:right">'+fmtRD(Math.round(t.val))+'</span>'
+          +'</div>'
+        +'</div>';
+      }).join('');
+      chartEl.innerHTML='<div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.6rem">📊 Distribución de Activos</div>'
+        +'<div style="display:flex;align-items:center;gap:1.25rem;flex-wrap:wrap">'
+          +donut
+          +'<div style="flex:1;min-width:180px">'+leyenda
+            +'<div style="border-top:1px solid #e5e7eb;margin-top:5px;padding-top:5px;display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:#374151">'
+              +'<span>Total activos</span>'
+              +'<span style="color:#7c3aed;font-family:\'Barlow Condensed\',sans-serif;font-size:16px">'+fmtRD(Math.round(totActivosRD))+'</span>'
+            +'</div>'
+          +'</div>'
+        +'</div>';
+    }
+  }
 
   setText('pat-total-neto', fmtRD(netoRD));
   var desglose = 'Tasa: 1 USD = RD$'+tasa.toFixed(2);
