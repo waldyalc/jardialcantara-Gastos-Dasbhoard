@@ -985,10 +985,7 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--ink);min-hei
         <span id="act-inmueble-count" style="color:#9ca3af;font-weight:400"></span>
       </div>
       <div id="act-inmueble-list"><div class="empty">Sin inmuebles registrados aún.</div></div>
-      <div id="act-inmueble-total" style="display:none;background:#f5f3ff;border-radius:8px;padding:.5rem .85rem;margin-top:.45rem;display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:700">
-        <span style="color:#7c3aed">Total inmuebles (estimado hoy):</span>
-        <span style="color:#7c3aed;font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900" id="act-inmueble-total-val">RD$0</span>
-      </div>
+      <div id="act-inmueble-total" style="display:none;background:#f5f3ff;border-radius:8px;padding:.5rem .85rem;margin-top:.35rem;font-size:13px;font-weight:700;color:#7c3aed"></div>
     </div>
 
     <!-- LISTA EMPRESAS -->
@@ -998,10 +995,7 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--ink);min-hei
         <span id="act-empresa-count" style="color:#9ca3af;font-weight:400"></span>
       </div>
       <div id="act-empresa-list"><div class="empty">Sin empresas registradas aún.</div></div>
-      <div id="act-empresa-total" style="display:none;background:#eff6ff;border-radius:8px;padding:.5rem .85rem;margin-top:.45rem;justify-content:space-between;align-items:center;font-size:13px;font-weight:700">
-        <span style="color:#1e40af">Total empresas (estimado hoy):</span>
-        <span style="color:#1e40af;font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900" id="act-empresa-total-val">RD$0</span>
-      </div>
+      <div id="act-empresa-total" style="display:none;background:#eff6ff;border-radius:8px;padding:.5rem .85rem;margin-top:.35rem;font-size:13px;font-weight:700;color:#1e40af"></div>
     </div>
 
     <!-- LISTA VEHÍCULOS -->
@@ -1011,10 +1005,7 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--ink);min-hei
         <span id="act-vehiculo-count" style="color:#9ca3af;font-weight:400"></span>
       </div>
       <div id="act-vehiculo-list"><div class="empty">Sin vehículos registrados aún.</div></div>
-      <div id="act-vehiculo-total" style="display:none;background:#fef2f2;border-radius:8px;padding:.5rem .85rem;margin-top:.45rem;justify-content:space-between;align-items:center;font-size:13px;font-weight:700">
-        <span style="color:#dc2626">Total vehículos (valor estimado hoy):</span>
-        <span style="color:#dc2626;font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900" id="act-vehiculo-total-val">RD$0</span>
-      </div>
+      <div id="act-vehiculo-total" style="display:none;background:#fef2f2;border-radius:8px;padding:.5rem .85rem;margin-top:.35rem;font-size:13px;font-weight:700;color:#b91c1c"></div>
     </div>
   </div>
 
@@ -2757,75 +2748,114 @@ function removeActivo(id){
 
 function renderActivos(){
   updateActivoNombres();
-  var inmuebles=activosData.filter(function(x){return x.categoria==='inmueble';});
-  var empresas =activosData.filter(function(x){return x.categoria==='empresa';});
-  var totInm=0, totEmp=0;
 
+  var inmuebles = activosData.filter(function(x){return x.categoria==='inmueble';});
+  var empresas  = activosData.filter(function(x){return x.categoria==='empresa';});
+  var vehiculos = activosData.filter(function(x){return x.categoria==='vehiculo';});
+
+  // Pre-calcular totales para poder mostrar % del total
+  var totInm = inmuebles.reduce(function(s,x){return s+calcValorActivo(x);},0);
+  var totEmp = empresas.reduce(function(s,x){ return s+calcValorActivo(x);},0);
+  var totVeh = vehiculos.reduce(function(s,x){ return s+calcValorActivo(x);},0);
+  var totGlobal = totInm + totEmp + totVeh;
+
+  function pct(val){ return totGlobal>0?Math.round(val/totGlobal*100):0; }
+  function barHTML(pctVal, color){
+    return '<div style="height:4px;background:#e5e7eb;border-radius:99px;margin-top:3px;overflow:hidden">'
+      +'<div style="height:100%;background:'+color+';border-radius:99px;width:'+pctVal+'%;transition:width .5s"></div></div>';
+  }
+
+  // ── Tarjeta compacta por activo ──
   function cardHTML(x){
-    var valEst   = calcValorActivo(x);
-    var cambPct  = x.valorBase>0?((valEst-x.valorBase)/x.valorBase*100).toFixed(1):0;
-    var años     = x.fechaBase?Math.max(0,(Date.now()-new Date(x.fechaBase).getTime())/(1000*60*60*24*365.25)).toFixed(1):0;
-    var esVeh    = x.categoria==='vehiculo';
-    var color    = esVeh?'#b91c1c': x.categoria==='inmueble'?'#7c3aed':'#1e40af';
-    var bg       = esVeh?'#fef2f2': x.categoria==='inmueble'?'#f5f3ff':'#eff6ff';
-    var bdr      = esVeh?'#fca5a5': x.categoria==='inmueble'?'#ddd6fe':'#bfdbfe';
-    var nombreMostrar = x.nombre + (x.modelo?' — '+x.modelo:'');
-    var tasaInfo = esVeh
-      ? '📉 Depreciación: '+(x.depreciacion||15)+'% anual · '+(parseFloat(años)>0?años+' año(s)':'Reciente')
-      : '📈 '+x.inflacion+'% inflación + '+x.revalorizacion+'% revalorización'+(parseFloat(años)>0?' · '+años+' año(s)':' · Reciente');
-    var cambioBadge = esVeh
-      ? (parseFloat(cambPct)<0?'<div style="font-size:11px;color:#dc2626;font-weight:700">📉 '+cambPct+'%</div>':'')
-      : (parseFloat(cambPct)>0?'<div style="font-size:11px;color:#15803d;font-weight:700">▲ +'+cambPct+'%</div>':'');
-    return '<div style="background:'+bg+';border:1px solid '+bdr+';border-radius:10px;padding:.75rem;margin-bottom:.45rem">'
-      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem">'
-      +'<div style="flex:1">'
-        +'<div style="font-weight:700;font-size:14px;color:'+color+'">'+nombreMostrar
-          +(x.zona&&x.zona!=='N/A'?' <span style="background:'+color+';color:#fff;font-size:10px;padding:1px 6px;border-radius:99px;font-weight:700">'+x.zona+'</span>':'')
+    var valEst  = calcValorActivo(x);
+    var cambPct = x.valorBase>0?((valEst-x.valorBase)/x.valorBase*100).toFixed(1):0;
+    var años    = x.fechaBase?Math.max(0,(Date.now()-new Date(x.fechaBase).getTime())/(1000*60*60*24*365.25)).toFixed(1):0;
+    var esVeh   = x.categoria==='vehiculo';
+    var color   = esVeh?'#b91c1c':x.categoria==='inmueble'?'#7c3aed':'#1e40af';
+    var bg      = esVeh?'#fff5f5':x.categoria==='inmueble'?'#faf5ff':'#eff6ff';
+    var bdr     = esVeh?'#fca5a5':x.categoria==='inmueble'?'#ddd6fe':'#bfdbfe';
+    var nomMost = x.nombre+(x.modelo?' · '+x.modelo:'');
+    var tInfo   = esVeh
+      ? '📉 '+(x.depreciacion||15)+'% dep. anual · '+(parseFloat(años)>0?años+' a':'Reciente')
+      : '📈 '+x.inflacion+'% inf. + '+x.revalorizacion+'% reval.'+(parseFloat(años)>0?' · '+años+' a':' · Reciente');
+    var badge   = esVeh
+      ? (parseFloat(cambPct)<0?'<span style="font-size:10px;color:#dc2626;font-weight:700;display:block">📉 '+cambPct+'%</span>':'')
+      : (parseFloat(cambPct)>0?'<span style="font-size:10px;color:#15803d;font-weight:700;display:block">▲ +'+cambPct+'%</span>':'');
+    // Porcentaje de este activo individual sobre el total global
+    var pctItem = totGlobal>0?Math.round(valEst/totGlobal*100):0;
+    return '<div style="background:'+bg+';border:1px solid '+bdr+';border-radius:8px;padding:.45rem .6rem;margin-bottom:.3rem">'
+      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.4rem">'
+      +'<div style="flex:1;min-width:0">'
+        +'<div style="font-weight:700;font-size:13px;color:'+color+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+nomMost
+          +(x.zona&&x.zona!=='N/A'?' <span style="background:'+color+';color:#fff;font-size:9px;padding:1px 5px;border-radius:99px">'+x.zona+'</span>':'')
         +'</div>'
-        +'<div style="font-size:12px;color:#6b7280;margin-top:2px">Valor registrado: '+fmtRD(x.valorBase)+' · '+x.fechaBase+(x.notas?' · '+x.notas:'')+'</div>'
-        +'<div style="font-size:11px;color:#9ca3af;margin-top:1px">'+tasaInfo+'</div>'
-        +(x.ultimaActualizacion?'<div style="font-size:10px;color:#9ca3af">🕐 Actualizado: '+x.ultimaActualizacion+'</div>':'')
+        +'<div style="font-size:10px;color:#6b7280;margin-top:1px">'+fmtRD(x.valorBase)+' · '+x.fechaBase+(x.notas?' · '+x.notas:'')+'</div>'
+        +'<div style="font-size:10px;color:#9ca3af">'+tInfo+'</div>'
       +'</div>'
       +'<div style="text-align:right;flex-shrink:0">'
-        +'<div style="font-weight:900;font-size:16px;color:'+color+';font-family:\'Barlow Condensed\',sans-serif">'+fmtRD(Math.round(valEst))+'</div>'
-        +cambioBadge
-        +'<div style="display:flex;gap:.3rem;justify-content:flex-end;margin-top:5px">'
-          +'<button onclick="editarActivo('+x.id+')" style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;padding:2px 8px;color:#374151">✏️</button>'
-          +'<button onclick="removeActivo('+x.id+')" style="background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;cursor:pointer;color:#dc2626;font-size:11px;font-weight:700;padding:2px 8px">✕</button>'
+        +'<div style="font-weight:900;font-size:14px;color:'+color+';font-family:\'Barlow Condensed\',sans-serif">'+fmtRD(Math.round(valEst))+'</div>'
+        +'<div style="font-size:10px;color:#9ca3af">'+pctItem+'% total activos</div>'
+        +badge
+        +'<div style="display:flex;gap:.25rem;justify-content:flex-end;margin-top:4px">'
+          +'<button onclick="editarActivo('+x.id+')" style="background:#fff;border:1px solid #e5e7eb;border-radius:5px;cursor:pointer;font-size:10px;font-weight:700;padding:1px 7px;color:#374151">✏️</button>'
+          +'<button onclick="removeActivo('+x.id+')" style="background:#fef2f2;border:1px solid #fca5a5;border-radius:5px;cursor:pointer;color:#dc2626;font-size:10px;font-weight:700;padding:1px 7px">✕</button>'
         +'</div>'
       +'</div></div></div>';
   }
 
-  var vehiculos = activosData.filter(function(x){return x.categoria==='vehiculo';});
-  var totVeh=0;
+  // ── Encabezado de categoría con % del total ──
+  function hdrHTML(id, label, tot, color){
+    var p = pct(tot);
+    var cEl = document.getElementById(id);
+    if(!cEl) return;
+    cEl.innerHTML = (tot>0
+      ? '<span style="font-weight:900;color:'+color+'">'+p+'%</span><span style="color:#9ca3af;font-size:10px"> del total</span>'
+      : '');
+  }
+
+  // ── Bloque total de categoría con barra ──
+  function showTotal(elId, valId, tot, color, items){
+    var tEl = document.getElementById(elId);
+    if(!tEl) return;
+    if(!items.length){ tEl.style.display='none'; return; }
+    var p = pct(tot);
+    tEl.style.display='block';
+    tEl.innerHTML=''
+      +'<div style="display:flex;justify-content:space-between;align-items:center">'
+        +'<span>Total (estimado hoy):</span>'
+        +'<span style="font-family:\'Barlow Condensed\',sans-serif;font-size:20px;font-weight:900;color:'+color+'">'+fmtRD(Math.round(tot))+'</span>'
+      +'</div>'
+      +barHTML(p, color)
+      +'<div style="font-size:10px;color:'+color+';margin-top:2px;text-align:right;font-weight:700">'+p+'% del patrimonio de activos</div>';
+  }
 
   var inmEl=document.getElementById('act-inmueble-list');
   var empEl=document.getElementById('act-empresa-list');
   var vehEl=document.getElementById('act-vehiculo-list');
 
+  // Inmuebles
   if(inmEl){
-    if(!inmuebles.length){ inmEl.innerHTML='<div class="empty">Sin inmuebles registrados aún.</div>'; }
-    else { inmEl.innerHTML=inmuebles.map(function(x){totInm+=calcValorActivo(x);return cardHTML(x);}).join(''); }
-    var cEl=document.getElementById('act-inmueble-count');
-    if(cEl) cEl.textContent=inmuebles.length>0?inmuebles.length+' propiedad(es)':'';
-    var tEl=document.getElementById('act-inmueble-total');
-    if(tEl){ if(inmuebles.length){tEl.style.display='flex';setText('act-inmueble-total-val',fmtRD(Math.round(totInm)));}else{tEl.style.display='none';} }
+    inmEl.innerHTML=!inmuebles.length
+      ?'<div class="empty" style="font-size:12px;padding:.5rem 0">Sin inmuebles registrados aún.</div>'
+      :inmuebles.map(cardHTML).join('');
+    hdrHTML('act-inmueble-count', 'Inmuebles', totInm, '#7c3aed');
+    showTotal('act-inmueble-total','act-inmueble-total-val',totInm,'#7c3aed',inmuebles);
   }
+  // Empresas
   if(empEl){
-    if(!empresas.length){ empEl.innerHTML='<div class="empty">Sin empresas registradas aún.</div>'; }
-    else { empEl.innerHTML=empresas.map(function(x){totEmp+=calcValorActivo(x);return cardHTML(x);}).join(''); }
-    var cEl2=document.getElementById('act-empresa-count');
-    if(cEl2) cEl2.textContent=empresas.length>0?empresas.length+' empresa(s)':'';
-    var tEl2=document.getElementById('act-empresa-total');
-    if(tEl2){ if(empresas.length){tEl2.style.display='flex';setText('act-empresa-total-val',fmtRD(Math.round(totEmp)));}else{tEl2.style.display='none';} }
+    empEl.innerHTML=!empresas.length
+      ?'<div class="empty" style="font-size:12px;padding:.5rem 0">Sin empresas registradas aún.</div>'
+      :empresas.map(cardHTML).join('');
+    hdrHTML('act-empresa-count','Empresas',totEmp,'#1e40af');
+    showTotal('act-empresa-total','act-empresa-total-val',totEmp,'#1e40af',empresas);
   }
+  // Vehículos
   if(vehEl){
-    if(!vehiculos.length){ vehEl.innerHTML='<div class="empty">Sin vehículos registrados aún.</div>'; }
-    else { vehEl.innerHTML=vehiculos.map(function(x){totVeh+=calcValorActivo(x);return cardHTML(x);}).join(''); }
-    var cEl3=document.getElementById('act-vehiculo-count');
-    if(cEl3) cEl3.textContent=vehiculos.length>0?vehiculos.length+' vehículo(s)':'';
-    var tEl3=document.getElementById('act-vehiculo-total');
-    if(tEl3){ if(vehiculos.length){tEl3.style.display='flex';setText('act-vehiculo-total-val',fmtRD(Math.round(totVeh)));}else{tEl3.style.display='none';} }
+    vehEl.innerHTML=!vehiculos.length
+      ?'<div class="empty" style="font-size:12px;padding:.5rem 0">Sin vehículos registrados aún.</div>'
+      :vehiculos.map(cardHTML).join('');
+    hdrHTML('act-vehiculo-count','Vehículos',totVeh,'#b91c1c');
+    showTotal('act-vehiculo-total','act-vehiculo-total-val',totVeh,'#b91c1c',vehiculos);
   }
 }
 
