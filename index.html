@@ -698,7 +698,7 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--ink);min-hei
     <div style="font-size:11px;letter-spacing:.1em;color:rgba(255,255,255,.4);text-transform:uppercase;margin-bottom:.6rem">📊 Patrimonio Total Neto en RD$</div>
     <div style="font-family:'Barlow Condensed',sans-serif;font-size:52px;font-weight:900;color:var(--gold);line-height:1" id="pat-total-neto">RD$0</div>
     <div style="font-size:11px;color:rgba(255,255,255,.35);margin-top:4px" id="pat-total-desglose">Todo convertido a RD$ usando la tasa registrada</div>
-    <div class="g4" style="margin-top:1rem;gap:.65rem">
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:.65rem;margin-top:1rem">
       <div style="background:rgba(255,255,255,.06);border-radius:10px;padding:.75rem;text-align:center">
         <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:3px">BOLSA</div>
         <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;color:#4487ff" id="pat-tot-bolsa">$0</div>
@@ -714,6 +714,10 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--ink);min-hei
       <div style="background:rgba(255,255,255,.06);border-radius:10px;padding:.75rem;text-align:center">
         <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:3px">SOBRANTE MES</div>
         <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900" id="pat-tot-sobrante" style="color:#27c987">RD$0</div>
+      </div>
+      <div style="background:rgba(124,58,237,.2);border-radius:10px;padding:.75rem;text-align:center;border:1px solid rgba(167,139,250,.3)">
+        <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:3px">INMUEBLES+EMP</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;color:#a78bfa" id="pat-tot-activos">RD$0</div>
       </div>
     </div>
   </div>
@@ -896,6 +900,90 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--ink);min-hei
     <button class="btn btn-gold btn-w" style="margin-top:.65rem" onclick="guardarDestinoSobrante()">✅ Guardar destino del sobrante</button>
   </div>
 
+  <!-- ══ OTROS ACTIVOS: INMUEBLES Y EMPRESAS ══════════════════════════ -->
+  <div class="card" style="border-left:4px solid #7c3aed">
+    <div class="ct">🏘️ Otros Activos · Inmuebles y Empresas</div>
+
+    <!-- FORMULARIO -->
+    <div style="background:var(--lgray);border-radius:12px;padding:1rem;margin-bottom:1rem">
+      <div class="g2" style="margin-bottom:.6rem">
+        <div class="fl" style="margin-bottom:0">
+          <label>Categoría</label>
+          <select id="act-cat" onchange="updateActivoNombres()">
+            <option value="inmueble">🏠 Inmueble / Bien Raíz</option>
+            <option value="empresa">🏢 Empresa</option>
+          </select>
+        </div>
+        <div class="fl" style="margin-bottom:0">
+          <label>Nombre / Propiedad</label>
+          <select id="act-nombre" onchange="syncZonaActivo()"></select>
+        </div>
+      </div>
+      <div id="act-zona-row" class="fl" style="margin-bottom:.6rem">
+        <label>Zona</label>
+        <select id="act-zona">
+          <option value="Urbana">🏙️ Urbana</option>
+          <option value="Rural">🌿 Rural</option>
+        </select>
+      </div>
+      <div class="g2" style="margin-bottom:.6rem">
+        <div class="fl" style="margin-bottom:0">
+          <label>Valor base (RD$)</label>
+          <input type="number" id="act-valor" placeholder="0" inputmode="decimal" min="0" step="0.01"/>
+        </div>
+        <div class="fl" style="margin-bottom:0">
+          <label>Fecha del valor</label>
+          <input type="date" id="act-fecha"/>
+        </div>
+      </div>
+      <div class="g2" style="margin-bottom:.6rem">
+        <div class="fl" style="margin-bottom:0">
+          <label>% Inflación anual est.</label>
+          <input type="number" id="act-inflacion" placeholder="5.0" inputmode="decimal" min="0" step="0.1" value="5"/>
+        </div>
+        <div class="fl" style="margin-bottom:0">
+          <label>% Revalorización adicional</label>
+          <input type="number" id="act-revalorizacion" placeholder="3.0" inputmode="decimal" min="0" step="0.1" value="3"/>
+        </div>
+      </div>
+      <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:.65rem .85rem;margin-bottom:.6rem;font-size:12px;color:#6b7280">
+        💡 <strong>Inflación</strong> = ajuste por pérdida de valor del dinero · <strong>Revalorización</strong> = apreciación real del inmueble o empresa más allá de la inflación.
+        El sistema calcula el valor estimado hoy usando: <em>Valor Base × (1 + tasa total)^años</em>
+      </div>
+      <div class="fl" style="margin-bottom:.6rem">
+        <label>Notas — opcional</label>
+        <input type="text" id="act-notas" placeholder="Ej: Tasación por notario, valor estimado de mercado..."/>
+      </div>
+      <button class="btn btn-ink btn-w" onclick="addActivo()">+ Agregar activo</button>
+    </div>
+
+    <!-- LISTA INMUEBLES -->
+    <div style="margin-bottom:1rem">
+      <div style="font-size:11px;font-weight:700;color:#7c3aed;text-transform:uppercase;letter-spacing:.07em;margin-bottom:.5rem;display:flex;justify-content:space-between">
+        <span>🏠 Inmuebles y Bienes Raíces</span>
+        <span id="act-inmueble-count" style="color:#9ca3af;font-weight:400"></span>
+      </div>
+      <div id="act-inmueble-list"><div class="empty">Sin inmuebles registrados aún.</div></div>
+      <div id="act-inmueble-total" style="display:none;background:#f5f3ff;border-radius:8px;padding:.5rem .85rem;margin-top:.45rem;display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:700">
+        <span style="color:#7c3aed">Total inmuebles (estimado hoy):</span>
+        <span style="color:#7c3aed;font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900" id="act-inmueble-total-val">RD$0</span>
+      </div>
+    </div>
+
+    <!-- LISTA EMPRESAS -->
+    <div>
+      <div style="font-size:11px;font-weight:700;color:#1e40af;text-transform:uppercase;letter-spacing:.07em;margin-bottom:.5rem;display:flex;justify-content:space-between">
+        <span>🏢 Empresas</span>
+        <span id="act-empresa-count" style="color:#9ca3af;font-weight:400"></span>
+      </div>
+      <div id="act-empresa-list"><div class="empty">Sin empresas registradas aún.</div></div>
+      <div id="act-empresa-total" style="display:none;background:#eff6ff;border-radius:8px;padding:.5rem .85rem;margin-top:.45rem;display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:700">
+        <span style="color:#1e40af">Total empresas (estimado hoy):</span>
+        <span style="color:#1e40af;font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900" id="act-empresa-total-val">RD$0</span>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <!-- ══════ SISTEMA SCLF ══════ -->
@@ -1076,12 +1164,13 @@ async function syncNube(key, value){
 }
 
 function recargarVariables(){
-  try{ txData   = JSON.parse(localStorage.getItem('sclf2_tx')   ||'[]'); }catch(e){ txData=[]; }
-  try{ portData = JSON.parse(localStorage.getItem('sclf2_port') ||'[]'); }catch(e){ portData=[]; }
-  try{ proyData = JSON.parse(localStorage.getItem('sclf2_proy') ||'{}'); }catch(e){ proyData={}; }
-  try{ inv2Data = JSON.parse(localStorage.getItem('sclf_inv2')  ||'[]'); }catch(e){ inv2Data=[]; }
-  try{ banData  = JSON.parse(localStorage.getItem('sclf_ban')   ||'[]'); }catch(e){ banData=[]; }
-  try{ sobData  = JSON.parse(localStorage.getItem('sclf_sob')   ||'{}'); }catch(e){ sobData={}; }
+  try{ txData      = JSON.parse(localStorage.getItem('sclf2_tx')      ||'[]'); }catch(e){ txData=[]; }
+  try{ portData    = JSON.parse(localStorage.getItem('sclf2_port')    ||'[]'); }catch(e){ portData=[]; }
+  try{ proyData    = JSON.parse(localStorage.getItem('sclf2_proy')    ||'{}'); }catch(e){ proyData={}; }
+  try{ inv2Data    = JSON.parse(localStorage.getItem('sclf_inv2')     ||'[]'); }catch(e){ inv2Data=[]; }
+  try{ banData     = JSON.parse(localStorage.getItem('sclf_ban')      ||'[]'); }catch(e){ banData=[]; }
+  try{ sobData     = JSON.parse(localStorage.getItem('sclf_sob')      ||'{}'); }catch(e){ sobData={}; }
+  try{ activosData = JSON.parse(localStorage.getItem('sclf_activos')  ||'[]'); }catch(e){ activosData=[]; }
 }
 
 function togglePassword(){
@@ -1728,6 +1817,13 @@ function initAppContent(){
   var hoyMes = new Date().toISOString().slice(0,7);
   var mesEl = document.getElementById('proy-mes');
   if(mesEl) mesEl.value = hoyMes;
+
+  // Inicializar dropdown de activos
+  if(document.getElementById('act-cat')) updateActivoNombres();
+
+  // Fecha de hoy para activos
+  var actFechaEl = document.getElementById('act-fecha');
+  if(actFechaEl && !actFechaEl.value) actFechaEl.value = hoy;
 
   // Restaurar tasa de cambio
   try{
@@ -2439,11 +2535,15 @@ function renderPatrimonio(){
   var efDOPtotal = efDOPacu; // = totEFbanDOP (calculado al inicio desde banData)
   var efUSDtotal = efUSDacu; // = totEFbanUSD (calculado al inicio desde banData)
 
+  // Otros activos: inmuebles + empresas (valor estimado hoy en RD$)
+  var totActivosRD = (typeof activosData!=='undefined'?activosData:[])
+    .reduce(function(s,x){ return s + calcValorActivo(x); }, 0);
+
   // Convertir todo a RD$
   var bolsaEnRD     = totBolsa   * tasa;
   var banUSDenRD    = totBanUSD  * tasa;   // solo banco regular
   var efUSDtotalRD  = efUSDtotal * tasa;   // EF en USD → RD$
-  var netoRD = totBanDOP + banUSDenRD + efDOPtotal + efUSDtotalRD + bolsaEnRD;
+  var netoRD = totBanDOP + banUSDenRD + efDOPtotal + efUSDtotalRD + bolsaEnRD + totActivosRD;
 
   // Tarjetas del banner
   setText('pat-tot-bolsa',    '$'+totBolsa.toFixed(0)+(totBolsa>0?' = '+fmtRD(bolsaEnRD):''));
@@ -2455,13 +2555,18 @@ function renderPatrimonio(){
   setText('pat-tot-sobrante', fmtRD(sobrante));
   var sobTot=document.getElementById('pat-tot-sobrante');
   if(sobTot) sobTot.style.color=sobrante>0?'#27c987':'#f25563';
+  setText('pat-tot-activos', fmtRD(Math.round(totActivosRD)));
 
   setText('pat-total-neto', fmtRD(netoRD));
   var desglose = 'Tasa: 1 USD = RD$'+tasa.toFixed(2);
-  if(bolsaEnRD>0)   desglose += ' · Bolsa: $'+totBolsa.toFixed(0)+' = '+fmtRD(bolsaEnRD);
-  if(banUSDenRD>0)  desglose += ' · Banco USD: $'+totBanUSD.toFixed(0)+' = '+fmtRD(banUSDenRD);
-  if(efUSDtotalRD>0)desglose += ' · Fondo Emerg. USD: $'+efUSDtotal.toFixed(0)+' = '+fmtRD(efUSDtotalRD);
+  if(bolsaEnRD>0)    desglose += ' · Bolsa: $'+totBolsa.toFixed(0)+' = '+fmtRD(bolsaEnRD);
+  if(banUSDenRD>0)   desglose += ' · Banco USD: $'+totBanUSD.toFixed(0)+' = '+fmtRD(banUSDenRD);
+  if(efUSDtotalRD>0) desglose += ' · Fondo Emerg. USD: $'+efUSDtotal.toFixed(0)+' = '+fmtRD(efUSDtotalRD);
+  if(totActivosRD>0) desglose += ' · Inmuebles+Empresas: '+fmtRD(Math.round(totActivosRD));
   setText('pat-total-desglose', desglose);
+
+  // Renderizar lista de activos
+  renderActivos();
 
   // Refrescar también el display del FE en la pestaña Presupuesto
   var efDispDOP = document.getElementById('fondo-acu-dop-display');
@@ -2470,6 +2575,156 @@ function renderPatrimonio(){
   if(efDispUSD) efDispUSD.textContent = '$'+efUSDtotal.toLocaleString('en-US');
   var efHidDOP = document.getElementById('fondo-acu-dop'); if(efHidDOP) efHidDOP.value = efDOPtotal;
   var efHidUSD = document.getElementById('fondo-acu-usd'); if(efHidUSD) efHidUSD.value = efUSDtotal;
+}
+
+// ══ OTROS ACTIVOS (INMUEBLES + EMPRESAS) ════════════════════════════
+
+var activosData = [];
+try{ activosData = JSON.parse(localStorage.getItem('sclf_activos')||'[]'); }catch(e){}
+
+var ACTIVOS_NOMBRES = {
+  inmueble:[
+    {nombre:'Apartamento en Santo Domingo',              zona:'Urbana'},
+    {nombre:'Solar en Rancho Arriba',                   zona:'Rural'},
+    {nombre:'Casa Campestre / Villa de Campo',           zona:'Rural'},
+    {nombre:'Edificio 3 Apt + Local — Cabral, Barahona',zona:'Rural'},
+    {nombre:'Casa Primer Nivel en Cabral',               zona:'Rural'},
+    {nombre:'Solar en Cabral',                           zona:'Rural'},
+    {nombre:'Otro Inmueble',                             zona:'Urbana'}
+  ],
+  empresa:[
+    {nombre:'Medoixas ALC, SRL',           zona:''},
+    {nombre:'Oxymat (Ferretería Oxymat)',  zona:''},
+    {nombre:'Otra Empresa',                zona:''}
+  ]
+};
+
+function saveActivos(){
+  try{
+    localStorage.setItem('sclf_activos', JSON.stringify(activosData));
+    syncNube('sclf_activos', activosData);
+  }catch(e){}
+}
+
+function updateActivoNombres(){
+  var cat   = (document.getElementById('act-cat')||{}).value||'inmueble';
+  var sel   = document.getElementById('act-nombre');
+  var zonaR = document.getElementById('act-zona-row');
+  if(!sel) return;
+  var opts = ACTIVOS_NOMBRES[cat]||[];
+  sel.innerHTML = opts.map(function(o){
+    return '<option value="'+o.nombre+'|'+o.zona+'">'+o.nombre+'</option>';
+  }).join('');
+  if(zonaR) zonaR.style.display = cat==='empresa'?'none':'';
+  syncZonaActivo();
+}
+
+function syncZonaActivo(){
+  var sel   = document.getElementById('act-nombre');
+  var zonaEl= document.getElementById('act-zona');
+  if(!sel||!zonaEl) return;
+  var partes = (sel.value||'').split('|');
+  if(partes[1]) zonaEl.value = partes[1];
+}
+
+function calcValorActivo(item){
+  var base  = parseFloat(item.valorBase)||0;
+  var fecha = item.fechaBase ? new Date(item.fechaBase) : new Date();
+  var años  = Math.max(0,(Date.now()-fecha.getTime())/(1000*60*60*24*365.25));
+  var tasa  = ((parseFloat(item.inflacion)||0)+(parseFloat(item.revalorizacion)||0))/100;
+  if(tasa===0||años===0) return base;
+  return base * Math.pow(1+tasa, años);
+}
+
+function addActivo(){
+  var cat   = document.getElementById('act-cat').value;
+  var nomV  = (document.getElementById('act-nombre').value||'').split('|')[0].trim();
+  var zona  = cat==='empresa'?'N/A':(document.getElementById('act-zona').value||'');
+  var valor = parseFloat(document.getElementById('act-valor').value)||0;
+  var fecha = document.getElementById('act-fecha').value;
+  var inf   = parseFloat(document.getElementById('act-inflacion').value)||0;
+  var reval = parseFloat(document.getElementById('act-revalorizacion').value)||0;
+  var notas = (document.getElementById('act-notas').value||'').trim();
+  if(!nomV){ alert('Selecciona un activo'); return; }
+  if(!valor){ alert('Ingresa el valor base'); return; }
+  if(!fecha){ alert('Ingresa la fecha del valor'); return; }
+  activosData.push({id:Date.now(),categoria:cat,nombre:nomV,zona:zona,
+    valorBase:valor,fechaBase:fecha,inflacion:inf,revalorizacion:reval,notas:notas});
+  saveActivos(); renderActivos(); renderPatrimonio();
+  document.getElementById('act-valor').value='';
+  document.getElementById('act-notas').value='';
+}
+
+function editarActivo(id){
+  var item=activosData.find(function(x){return x.id===id;});
+  if(!item) return;
+  var nv=prompt('Nuevo valor base (RD$) — Actual: '+fmtRD(item.valorBase),item.valorBase);
+  if(nv===null) return;
+  var v=parseFloat(nv); if(!v||v<=0){alert('Valor inválido');return;}
+  var nf=prompt('Nueva fecha (AAAA-MM-DD) — Actual: '+item.fechaBase,item.fechaBase);
+  if(nf===null) return;
+  item.valorBase=v; item.fechaBase=nf;
+  item.ultimaActualizacion=new Date().toLocaleDateString('es-DO');
+  saveActivos(); renderActivos(); renderPatrimonio();
+}
+
+function removeActivo(id){
+  if(!confirm('¿Eliminar este activo del patrimonio?')) return;
+  activosData=activosData.filter(function(x){return x.id!==id;});
+  saveActivos(); renderActivos(); renderPatrimonio();
+}
+
+function renderActivos(){
+  updateActivoNombres();
+  var inmuebles=activosData.filter(function(x){return x.categoria==='inmueble';});
+  var empresas =activosData.filter(function(x){return x.categoria==='empresa';});
+  var totInm=0, totEmp=0;
+
+  function cardHTML(x){
+    var valEst=calcValorActivo(x);
+    var crecPct=x.valorBase>0?((valEst-x.valorBase)/x.valorBase*100).toFixed(1):0;
+    var años=x.fechaBase?Math.max(0,(Date.now()-new Date(x.fechaBase).getTime())/(1000*60*60*24*365.25)).toFixed(1):0;
+    var color=x.categoria==='inmueble'?'#7c3aed':'#1e40af';
+    var bg=x.categoria==='inmueble'?'#f5f3ff':'#eff6ff';
+    var bdr=x.categoria==='inmueble'?'#ddd6fe':'#bfdbfe';
+    return '<div style="background:'+bg+';border:1px solid '+bdr+';border-radius:10px;padding:.75rem;margin-bottom:.45rem">'
+      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem">'
+      +'<div style="flex:1">'
+        +'<div style="font-weight:700;font-size:14px;color:'+color+'">'+x.nombre
+          +(x.zona&&x.zona!=='N/A'?' <span style="background:'+color+';color:#fff;font-size:10px;padding:1px 6px;border-radius:99px;font-weight:700">'+x.zona+'</span>':'')
+        +'</div>'
+        +'<div style="font-size:12px;color:#6b7280;margin-top:2px">Valor base: '+fmtRD(x.valorBase)+' · '+x.fechaBase+(x.notas?' · '+x.notas:'')+'</div>'
+        +'<div style="font-size:11px;color:#9ca3af;margin-top:1px">📈 '+x.inflacion+'% inflación + '+x.revalorizacion+'% revalorización'+(parseFloat(años)>0?' · '+años+' año(s)':' · Reciente')+'</div>'
+        +(x.ultimaActualizacion?'<div style="font-size:10px;color:#9ca3af">🕐 Actualizado: '+x.ultimaActualizacion+'</div>':'')
+      +'</div>'
+      +'<div style="text-align:right;flex-shrink:0">'
+        +'<div style="font-weight:900;font-size:16px;color:'+color+';font-family:\'Barlow Condensed\',sans-serif">'+fmtRD(Math.round(valEst))+'</div>'
+        +(parseFloat(crecPct)>0?'<div style="font-size:11px;color:#15803d;font-weight:700">▲ +'+crecPct+'%</div>':'')
+        +'<div style="display:flex;gap:.3rem;justify-content:flex-end;margin-top:5px">'
+          +'<button onclick="editarActivo('+x.id+')" style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;padding:2px 8px;color:#374151">✏️</button>'
+          +'<button onclick="removeActivo('+x.id+')" style="background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;cursor:pointer;color:#dc2626;font-size:11px;font-weight:700;padding:2px 8px">✕</button>'
+        +'</div>'
+      +'</div></div></div>';
+  }
+
+  var inmEl=document.getElementById('act-inmueble-list');
+  var empEl=document.getElementById('act-empresa-list');
+  if(inmEl){
+    if(!inmuebles.length){ inmEl.innerHTML='<div class="empty">Sin inmuebles registrados aún.</div>'; }
+    else { inmEl.innerHTML=inmuebles.map(function(x){totInm+=calcValorActivo(x);return cardHTML(x);}).join(''); }
+    var cEl=document.getElementById('act-inmueble-count');
+    if(cEl) cEl.textContent=inmuebles.length>0?inmuebles.length+' propiedad(es)':'';
+    var tEl=document.getElementById('act-inmueble-total');
+    if(tEl){ if(inmuebles.length){tEl.style.display='flex';setText('act-inmueble-total-val',fmtRD(Math.round(totInm)));}else{tEl.style.display='none';} }
+  }
+  if(empEl){
+    if(!empresas.length){ empEl.innerHTML='<div class="empty">Sin empresas registradas aún.</div>'; }
+    else { empEl.innerHTML=empresas.map(function(x){totEmp+=calcValorActivo(x);return cardHTML(x);}).join(''); }
+    var cEl2=document.getElementById('act-empresa-count');
+    if(cEl2) cEl2.textContent=empresas.length>0?empresas.length+' empresa(s)':'';
+    var tEl2=document.getElementById('act-empresa-total');
+    if(tEl2){ if(empresas.length){tEl2.style.display='flex';setText('act-empresa-total-val',fmtRD(Math.round(totEmp)));}else{tEl2.style.display='none';} }
+  }
 }
 
 function recalcProyTotals(){
