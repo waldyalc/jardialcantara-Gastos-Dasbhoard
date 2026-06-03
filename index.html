@@ -698,31 +698,51 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--ink);min-hei
     <div style="font-size:11px;letter-spacing:.1em;color:rgba(255,255,255,.4);text-transform:uppercase;margin-bottom:.6rem">📊 Patrimonio Total Neto en RD$</div>
     <div style="font-family:'Barlow Condensed',sans-serif;font-size:52px;font-weight:900;color:var(--gold);line-height:1" id="pat-total-neto">RD$0</div>
     <div style="font-size:11px;color:rgba(255,255,255,.35);margin-top:4px" id="pat-total-desglose">Todo convertido a RD$ usando la tasa registrada</div>
-    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:.65rem;margin-top:1rem">
-      <div style="background:rgba(255,255,255,.06);border-radius:10px;padding:.75rem;text-align:center">
-        <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:3px">📈 BOLSA</div>
-        <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;color:#4487ff" id="pat-tot-bolsa">$0</div>
-        <div id="pat-pct-bolsa" style="font-size:10px;color:rgba(255,255,255,.35);margin-top:2px"></div>
+    <!-- Fila 1: Activos Financieros -->
+    <div style="margin-top:.85rem">
+      <div style="font-size:9px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem">— Activos Financieros —</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem">
+        <div style="background:rgba(255,255,255,.06);border-radius:10px;padding:.65rem .5rem;text-align:center">
+          <div style="font-size:9px;color:rgba(255,255,255,.4);margin-bottom:3px">📈 BOLSA</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;color:#4487ff" id="pat-tot-bolsa">$0</div>
+          <div id="pat-pct-bolsa" style="font-size:9px;color:rgba(255,255,255,.35);margin-top:2px"></div>
+        </div>
+        <div style="background:rgba(255,255,255,.06);border-radius:10px;padding:.65rem .5rem;text-align:center">
+          <div style="font-size:9px;color:rgba(255,255,255,.4);margin-bottom:3px">🏦 BANCO</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;color:#27c987" id="pat-tot-banco">RD$0</div>
+          <div id="pat-pct-banco" style="font-size:9px;color:rgba(255,255,255,.35);margin-top:2px"></div>
+        </div>
+        <div style="background:rgba(255,255,255,.06);border-radius:10px;padding:.65rem .5rem;text-align:center">
+          <div style="font-size:9px;color:rgba(255,255,255,.4);margin-bottom:3px">🛡️ EMERGENCIA</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;color:var(--gold)" id="pat-tot-ef">RD$0</div>
+          <div id="pat-pct-ef" style="font-size:9px;color:rgba(255,255,255,.35);margin-top:2px"></div>
+        </div>
+        <div style="background:rgba(255,255,255,.06);border-radius:10px;padding:.65rem .5rem;text-align:center">
+          <div style="font-size:9px;color:rgba(255,255,255,.4);margin-bottom:3px">💰 SOBRANTE</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900" id="pat-tot-sobrante">RD$0</div>
+          <div id="pat-pct-sobrante" style="font-size:9px;color:rgba(255,255,255,.35);margin-top:2px"></div>
+        </div>
       </div>
-      <div style="background:rgba(255,255,255,.06);border-radius:10px;padding:.75rem;text-align:center">
-        <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:3px">🏦 BANCO</div>
-        <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;color:#27c987" id="pat-tot-banco">RD$0</div>
-        <div id="pat-pct-banco" style="font-size:10px;color:rgba(255,255,255,.35);margin-top:2px"></div>
-      </div>
-      <div style="background:rgba(255,255,255,.06);border-radius:10px;padding:.75rem;text-align:center">
-        <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:3px">🛡️ EMERGENCIA</div>
-        <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;color:var(--gold)" id="pat-tot-ef">RD$0</div>
-        <div id="pat-pct-ef" style="font-size:10px;color:rgba(255,255,255,.35);margin-top:2px"></div>
-      </div>
-      <div style="background:rgba(255,255,255,.06);border-radius:10px;padding:.75rem;text-align:center">
-        <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:3px">💰 SOBRANTE MES</div>
-        <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900" id="pat-tot-sobrante">RD$0</div>
-        <div id="pat-pct-sobrante" style="font-size:10px;color:rgba(255,255,255,.35);margin-top:2px"></div>
-      </div>
-      <div style="background:rgba(124,58,237,.2);border-radius:10px;padding:.75rem;text-align:center;border:1px solid rgba(167,139,250,.3)">
-        <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:3px">🏘️ ACTIVOS</div>
-        <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;color:#a78bfa" id="pat-tot-activos">RD$0</div>
-        <div id="pat-pct-activos" style="font-size:10px;color:rgba(255,255,255,.35);margin-top:2px"></div>
+    </div>
+    <!-- Fila 2: Activos Reales -->
+    <div style="margin-top:.5rem">
+      <div style="font-size:9px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem">— Activos Reales —</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem">
+        <div style="background:rgba(124,58,237,.18);border-radius:10px;padding:.65rem .5rem;text-align:center;border:1px solid rgba(167,139,250,.25)">
+          <div style="font-size:9px;color:rgba(255,255,255,.4);margin-bottom:3px">🏠 INMUEBLES</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;color:#c4b5fd" id="pat-tot-inmuebles">RD$0</div>
+          <div id="pat-pct-inmuebles" style="font-size:9px;color:rgba(255,255,255,.35);margin-top:2px"></div>
+        </div>
+        <div style="background:rgba(30,64,175,.25);border-radius:10px;padding:.65rem .5rem;text-align:center;border:1px solid rgba(96,165,250,.25)">
+          <div style="font-size:9px;color:rgba(255,255,255,.4);margin-bottom:3px">🏢 EMPRESAS</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;color:#93c5fd" id="pat-tot-empresas">RD$0</div>
+          <div id="pat-pct-empresas" style="font-size:9px;color:rgba(255,255,255,.35);margin-top:2px"></div>
+        </div>
+        <div style="background:rgba(185,28,28,.18);border-radius:10px;padding:.65rem .5rem;text-align:center;border:1px solid rgba(252,165,165,.2)">
+          <div style="font-size:9px;color:rgba(255,255,255,.4);margin-bottom:3px">🚗 VEHÍCULOS</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;color:#fca5a5" id="pat-tot-vehiculos">RD$0</div>
+          <div id="pat-pct-vehiculos" style="font-size:9px;color:rgba(255,255,255,.35);margin-top:2px"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -2602,11 +2622,17 @@ function renderPatrimonio(){
       el.textContent = (p>=1?p.toFixed(1):p.toFixed(2))+'% del total';
     } else { el.textContent=''; }
   }
-  setPct('pat-pct-bolsa',    bolsaEnRD);
-  setPct('pat-pct-banco',    totBanDOP + banUSDenRD);
-  setPct('pat-pct-ef',       efDOPtotal + efUSDtotalRD);
-  setPct('pat-pct-sobrante', Math.max(0, sobrante));
-  setPct('pat-pct-activos',  totActivosRD);
+  setPct('pat-pct-bolsa',     bolsaEnRD);
+  setPct('pat-pct-banco',     totBanDOP + banUSDenRD);
+  setPct('pat-pct-ef',        efDOPtotal + efUSDtotalRD);
+  setPct('pat-pct-sobrante',  Math.max(0, sobrante));
+  // Activos reales individuales
+  setText('pat-tot-inmuebles', fmtRD(Math.round(totInmRD)));
+  setText('pat-tot-empresas',  fmtRD(Math.round(totEmpRD)));
+  setText('pat-tot-vehiculos', fmtRD(Math.round(totVehRD)));
+  setPct('pat-pct-inmuebles',  totInmRD);
+  setPct('pat-pct-empresas',   totEmpRD);
+  setPct('pat-pct-vehiculos',  totVehRD);
 
   // ── Gráfico donut distribución interna de activos (inmueble/empresa/vehículo) ──
   var chartEl = document.getElementById('pat-activos-chart');
