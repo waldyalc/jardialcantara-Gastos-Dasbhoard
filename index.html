@@ -725,25 +725,30 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--ink);min-hei
         </div>
       </div>
     </div>
-    <!-- Fila 2: Activos Reales -->
+    <!-- Fila 2: Activos Reales + Deudas -->
     <div style="margin-top:.5rem">
-      <div style="font-size:9px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem">— Activos Reales —</div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem">
-        <div style="background:rgba(124,58,237,.18);border-radius:10px;padding:.65rem .5rem;text-align:center;border:1px solid rgba(167,139,250,.25)">
+      <div style="font-size:9px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem">— Activos Reales · Pasivos —</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem">
+        <div style="background:rgba(124,58,237,.18);border-radius:10px;padding:.55rem .4rem;text-align:center;border:1px solid rgba(167,139,250,.25)">
           <div style="font-size:9px;color:rgba(255,255,255,.4);margin-bottom:3px">🏠 INMUEBLES</div>
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;color:#c4b5fd" id="pat-tot-inmuebles">RD$0</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:900;color:#c4b5fd" id="pat-tot-inmuebles">RD$0</div>
           <div id="pat-pct-inmuebles" style="font-size:9px;color:rgba(255,255,255,.35);margin-top:2px"></div>
-          <div id="pat-inmuebles-breakdown" style="font-size:9px;color:rgba(255,255,255,.4);margin-top:5px;border-top:1px solid rgba(255,255,255,.1);padding-top:4px;line-height:1.7;text-align:left"></div>
+          <div id="pat-inmuebles-breakdown" style="font-size:9px;color:rgba(255,255,255,.4);margin-top:4px;border-top:1px solid rgba(255,255,255,.1);padding-top:3px;line-height:1.6;text-align:left"></div>
         </div>
-        <div style="background:rgba(30,64,175,.25);border-radius:10px;padding:.65rem .5rem;text-align:center;border:1px solid rgba(96,165,250,.25)">
+        <div style="background:rgba(8,145,178,.2);border-radius:10px;padding:.55rem .4rem;text-align:center;border:1px solid rgba(103,232,249,.2)">
           <div style="font-size:9px;color:rgba(255,255,255,.4);margin-bottom:3px">🏢 EMPRESAS</div>
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;color:#93c5fd" id="pat-tot-empresas">RD$0</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:900;color:#67e8f9" id="pat-tot-empresas">RD$0</div>
           <div id="pat-pct-empresas" style="font-size:9px;color:rgba(255,255,255,.35);margin-top:2px"></div>
         </div>
-        <div style="background:rgba(185,28,28,.18);border-radius:10px;padding:.65rem .5rem;text-align:center;border:1px solid rgba(252,165,165,.2)">
+        <div style="background:rgba(185,28,28,.18);border-radius:10px;padding:.55rem .4rem;text-align:center;border:1px solid rgba(252,165,165,.2)">
           <div style="font-size:9px;color:rgba(255,255,255,.4);margin-bottom:3px">🚗 VEHÍCULOS</div>
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;color:#fca5a5" id="pat-tot-vehiculos">RD$0</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:900;color:#fca5a5" id="pat-tot-vehiculos">RD$0</div>
           <div id="pat-pct-vehiculos" style="font-size:9px;color:rgba(255,255,255,.35);margin-top:2px"></div>
+        </div>
+        <div style="background:rgba(220,38,38,.25);border-radius:10px;padding:.55rem .4rem;text-align:center;border:1px solid rgba(252,165,165,.35)">
+          <div style="font-size:9px;color:rgba(255,255,255,.4);margin-bottom:3px">💳 DEUDAS</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:900;color:#f87171" id="pat-tot-deudas">RD$0</div>
+          <div id="pat-pct-deudas" style="font-size:9px;color:rgba(255,255,255,.35);margin-top:2px"></div>
         </div>
       </div>
     </div>
@@ -933,6 +938,44 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--ink);min-hei
       <button class="btn btn-ink btn-w" onclick="addBanco()">+ Agregar cuenta</button>
       <div id="ban-list" style="margin-top:.85rem"></div>
     </div>
+  </div>
+
+  <!-- DEUDAS Y PASIVOS -->
+  <div class="card" style="border-left:4px solid #dc2626">
+    <div class="ct">💳 Deudas y Pasivos · Préstamos y Tarjetas de Crédito</div>
+    <div style="background:#fff5f5;border-radius:10px;padding:.85rem;margin-bottom:.75rem">
+      <div class="g2" style="margin-bottom:.5rem">
+        <div class="fl" style="margin-bottom:0">
+          <label>Tipo</label>
+          <select id="deu-tipo">
+            <option>💳 Tarjeta de Crédito</option>
+            <option>🏦 Préstamo Personal</option>
+            <option>🏠 Préstamo Hipotecario</option>
+            <option>🚗 Préstamo de Vehículo</option>
+            <option>💼 Préstamo Empresarial</option>
+            <option>👥 Deuda Personal</option>
+            <option>📦 Otro Pasivo</option>
+          </select>
+        </div>
+        <div class="fl" style="margin-bottom:0">
+          <label>Nombre / Entidad</label>
+          <input type="text" id="deu-nombre" placeholder="Visa Popular, Préstamo BHD, Auto BDI..."/>
+        </div>
+      </div>
+      <div class="g2" style="margin-bottom:.5rem">
+        <div class="fl" style="margin-bottom:0">
+          <label>Saldo pendiente (RD$)</label>
+          <input type="number" id="deu-monto" placeholder="0.00" inputmode="decimal" min="0" step="0.01"/>
+        </div>
+        <div class="fl" style="margin-bottom:0">
+          <label>Tasa anual (%) — opcional</label>
+          <input type="number" id="deu-tasa" placeholder="0.00" inputmode="decimal" min="0" step="0.01"/>
+        </div>
+      </div>
+      <button class="btn btn-w" style="background:#dc2626;color:#fff;font-size:13px" onclick="addDeuda()">+ Registrar deuda</button>
+    </div>
+    <div id="deu-list"></div>
+    <div id="deu-total-card" style="display:none;margin-top:.5rem;background:#fef2f2;border-radius:8px;padding:.65rem .85rem"></div>
   </div>
 
   <!-- DESTINO DEL SOBRANTE -->
@@ -1268,6 +1311,7 @@ function recargarVariables(){
   try{ sobData     = JSON.parse(localStorage.getItem('sclf_sob')      ||'{}'); }catch(e){ sobData={}; }
   try{ activosData     = JSON.parse(localStorage.getItem('sclf_activos')     ||'[]'); }catch(e){ activosData=[]; }
   try{ cashBrokerData = JSON.parse(localStorage.getItem('sclf_cash_broker') ||'[]'); }catch(e){ cashBrokerData=[]; }
+  try{ deudasData     = JSON.parse(localStorage.getItem('sclf_deudas')      ||'[]'); }catch(e){ deudasData=[]; }
 }
 
 function togglePassword(){
@@ -2650,7 +2694,8 @@ function renderPatrimonio(){
   var bolsaEnRD     = totBolsa   * tasa;
   var banUSDenRD    = totBanUSD  * tasa;   // solo banco regular
   var efUSDtotalRD  = efUSDtotal * tasa;   // EF en USD → RD$
-  var netoRD = totBanDOP + banUSDenRD + efDOPtotal + efUSDtotalRD + bolsaEnRD + totActivosRD;
+  var totDeudas = (typeof deudasData!=='undefined'?deudasData:[]).reduce(function(s,x){return s+x.monto;},0);
+  var netoRD = totBanDOP + banUSDenRD + efDOPtotal + efUSDtotalRD + bolsaEnRD + totActivosRD - totDeudas;
 
   // Tarjetas del banner
   setText('pat-tot-bolsa',    '$'+totBolsa.toFixed(0)+(totBolsa>0?' = '+fmtRD(bolsaEnRD):''));
@@ -2694,6 +2739,15 @@ function renderPatrimonio(){
   }
   setPct('pat-pct-empresas',   totEmpRD);
   setPct('pat-pct-vehiculos',  totVehRD);
+  // Deudas (monto absoluto + % del activo bruto)
+  setText('pat-tot-deudas', totDeudas>0?'-'+fmtRD(Math.round(totDeudas)):'RD$0');
+  var deuPctEl=document.getElementById('pat-pct-deudas');
+  if(deuPctEl && totDeudas>0){
+    var bruto=netoRD+totDeudas;
+    var dp=bruto>0?(totDeudas/bruto*100):0;
+    deuPctEl.textContent=(dp>=1?dp.toFixed(1):dp.toFixed(2))+'% activos brutos';
+  } else if(deuPctEl){ deuPctEl.textContent=''; }
+  renderDeudas();
 
   // ── Gráfico donut: TODOS los tipos de activos del patrimonio total ──
   var chartEl = document.getElementById('pat-activos-chart');
@@ -3048,6 +3102,80 @@ function renderActivos(){
       :vehiculos.map(cardHTML).join('');
     hdrHTML('act-vehiculo-count','Vehículos',totVeh,'#b91c1c');
     showTotal('act-vehiculo-total','act-vehiculo-total-val',totVeh,'#b91c1c',vehiculos);
+  }
+}
+
+// ══ DEUDAS Y PASIVOS ════════════════════════════════════════════════
+
+var deudasData = [];
+try{ deudasData = JSON.parse(localStorage.getItem('sclf_deudas')||'[]'); }catch(e){}
+
+function saveDeudas(){
+  try{
+    localStorage.setItem('sclf_deudas', JSON.stringify(deudasData));
+    syncNube('sclf_deudas', deudasData);
+  }catch(e){}
+}
+
+function addDeuda(){
+  var tipo   = document.getElementById('deu-tipo').value;
+  var nombre = (document.getElementById('deu-nombre').value||'').trim();
+  var monto  = parseFloat(document.getElementById('deu-monto').value)||0;
+  var tasa   = parseFloat(document.getElementById('deu-tasa').value)||0;
+  if(!nombre){ alert('Ingresa el nombre o entidad'); return; }
+  if(!monto) { alert('Ingresa el saldo pendiente'); return; }
+  deudasData.push({ id:Date.now(), tipo:tipo, nombre:nombre, monto:monto, tasa:tasa });
+  saveDeudas(); renderDeudas(); renderPatrimonio();
+  document.getElementById('deu-nombre').value='';
+  document.getElementById('deu-monto').value='';
+  document.getElementById('deu-tasa').value='';
+}
+
+function editarDeuda(id){
+  var item=deudasData.find(function(x){ return x.id===id; });
+  if(!item) return;
+  var nv=prompt('Nuevo saldo pendiente (RD$) — Actual: '+fmtRD(item.monto), item.monto);
+  if(nv===null) return;
+  var v=parseFloat(nv); if(isNaN(v)||v<0){ alert('Monto inválido'); return; }
+  item.monto=v;
+  saveDeudas(); renderDeudas(); renderPatrimonio();
+}
+
+function removeDeuda(id){
+  if(!confirm('¿Eliminar esta deuda del registro?')) return;
+  deudasData=deudasData.filter(function(x){ return x.id!==id; });
+  saveDeudas(); renderDeudas(); renderPatrimonio();
+}
+
+function renderDeudas(){
+  var el=document.getElementById('deu-list');
+  if(!el) return;
+  var tot=deudasData.reduce(function(s,x){ return s+x.monto; },0);
+  if(!deudasData.length){
+    el.innerHTML='<div class="empty" style="font-size:12px">Sin deudas registradas.</div>';
+  } else {
+    el.innerHTML=deudasData.map(function(x){
+      return '<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:.5rem .75rem;margin-bottom:.35rem;display:flex;justify-content:space-between;align-items:center">'
+        +'<div>'
+          +'<div style="font-weight:700;font-size:13px;color:#b91c1c">'+x.tipo+' · '+x.nombre+'</div>'
+          +(x.tasa>0?'<div style="font-size:10px;color:#9ca3af">Tasa: '+x.tasa+'% anual</div>':'')
+        +'</div>'
+        +'<div style="display:flex;align-items:center;gap:.4rem">'
+          +'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:900;color:#dc2626">-'+fmtRD(x.monto)+'</div>'
+          +'<button onclick="editarDeuda('+x.id+')" style="background:#fff;border:1px solid #e5e7eb;border-radius:5px;cursor:pointer;font-size:10px;font-weight:700;padding:1px 7px;color:#374151">✏️</button>'
+          +'<button onclick="removeDeuda('+x.id+')" style="background:#fef2f2;border:1px solid #fca5a5;border-radius:5px;cursor:pointer;color:#dc2626;font-size:10px;font-weight:700;padding:1px 7px">✕</button>'
+        +'</div></div>';
+    }).join('');
+  }
+  var totEl=document.getElementById('deu-total-card');
+  if(totEl){
+    if(tot>0){
+      totEl.style.display='block';
+      totEl.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center">'
+        +'<span style="font-size:13px;font-weight:700;color:#dc2626">⬇️ Total deudas (resta del patrimonio):</span>'
+        +'<span style="font-family:\'Barlow Condensed\',sans-serif;font-size:20px;font-weight:900;color:#dc2626">-'+fmtRD(Math.round(tot))+'</span>'
+        +'</div>';
+    } else { totEl.style.display='none'; }
   }
 }
 
