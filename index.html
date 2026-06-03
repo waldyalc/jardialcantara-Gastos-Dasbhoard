@@ -912,6 +912,7 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--ink);min-hei
           <select id="act-cat" onchange="updateActivoNombres()">
             <option value="inmueble">🏠 Inmueble / Bien Raíz</option>
             <option value="empresa">🏢 Empresa</option>
+            <option value="vehiculo">🚗 Vehículo</option>
           </select>
         </div>
         <div class="fl" style="margin-bottom:0">
@@ -926,9 +927,29 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--ink);min-hei
           <option value="Rural">🌿 Rural</option>
         </select>
       </div>
+      <!-- Sección específica VEHÍCULO -->
+      <div id="act-vehiculo-section" style="display:none;background:#fef2f2;border-radius:10px;padding:.85rem;margin-bottom:.6rem">
+        <div style="font-size:11px;font-weight:700;color:#991b1b;text-transform:uppercase;letter-spacing:.04em;margin-bottom:.6rem">🚗 Información del Vehículo</div>
+        <div class="fl" style="margin-bottom:.5rem">
+          <label>Marca, Modelo y Año</label>
+          <input type="text" id="act-modelo" placeholder="Ej: Toyota Hilux 2020, Honda Accord 2019, Yamaha R3..."/>
+        </div>
+        <div class="fl" style="margin-bottom:.5rem">
+          <label>% Depreciación anual</label>
+          <input type="number" id="act-depreciacion" placeholder="15" inputmode="decimal" min="0" max="50" step="0.5" value="15"
+            style="border-color:#fca5a5"/>
+        </div>
+        <div style="background:#fff;border-left:3px solid #f87171;border-radius:6px;padding:.55rem .75rem;font-size:12px;color:#7f1d1d;line-height:1.5">
+          📉 <strong>Los vehículos pierden valor cada año (depreciación).</strong><br/>
+          La inflación encarece los autos <em>nuevos</em>, pero tu vehículo actual sigue valiendo menos.
+          Solo aplica la tasa de depreciación. Referencia RD: 15–20% anual (10% para camiones y maquinaria).
+          <br/><strong>Fórmula:</strong> <em>Valor Actual × (1 − depreciación)^años</em>
+        </div>
+      </div>
+
       <div class="g2" style="margin-bottom:.6rem">
         <div class="fl" style="margin-bottom:0">
-          <label>Valor base (RD$)</label>
+          <label id="act-valor-label">Valor base (RD$)</label>
           <input type="number" id="act-valor" placeholder="0" inputmode="decimal" min="0" step="0.01"/>
         </div>
         <div class="fl" style="margin-bottom:0">
@@ -936,7 +957,7 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--ink);min-hei
           <input type="date" id="act-fecha"/>
         </div>
       </div>
-      <div class="g2" style="margin-bottom:.6rem">
+      <div id="act-tasas-row" class="g2" style="margin-bottom:.6rem">
         <div class="fl" style="margin-bottom:0">
           <label>% Inflación anual est.</label>
           <input type="number" id="act-inflacion" placeholder="5.0" inputmode="decimal" min="0" step="0.1" value="5"/>
@@ -946,9 +967,9 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--ink);min-hei
           <input type="number" id="act-revalorizacion" placeholder="3.0" inputmode="decimal" min="0" step="0.1" value="3"/>
         </div>
       </div>
-      <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:.65rem .85rem;margin-bottom:.6rem;font-size:12px;color:#6b7280">
+      <div id="act-nota-tasas" style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:.65rem .85rem;margin-bottom:.6rem;font-size:12px;color:#6b7280">
         💡 <strong>Inflación</strong> = ajuste por pérdida de valor del dinero · <strong>Revalorización</strong> = apreciación real del inmueble o empresa más allá de la inflación.
-        El sistema calcula el valor estimado hoy usando: <em>Valor Base × (1 + tasa total)^años</em>
+        Fórmula: <em>Valor Base × (1 + tasa total)^años</em>
       </div>
       <div class="fl" style="margin-bottom:.6rem">
         <label>Notas — opcional</label>
@@ -971,15 +992,28 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--ink);min-hei
     </div>
 
     <!-- LISTA EMPRESAS -->
-    <div>
+    <div style="margin-bottom:1rem">
       <div style="font-size:11px;font-weight:700;color:#1e40af;text-transform:uppercase;letter-spacing:.07em;margin-bottom:.5rem;display:flex;justify-content:space-between">
         <span>🏢 Empresas</span>
         <span id="act-empresa-count" style="color:#9ca3af;font-weight:400"></span>
       </div>
       <div id="act-empresa-list"><div class="empty">Sin empresas registradas aún.</div></div>
-      <div id="act-empresa-total" style="display:none;background:#eff6ff;border-radius:8px;padding:.5rem .85rem;margin-top:.45rem;display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:700">
+      <div id="act-empresa-total" style="display:none;background:#eff6ff;border-radius:8px;padding:.5rem .85rem;margin-top:.45rem;justify-content:space-between;align-items:center;font-size:13px;font-weight:700">
         <span style="color:#1e40af">Total empresas (estimado hoy):</span>
         <span style="color:#1e40af;font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900" id="act-empresa-total-val">RD$0</span>
+      </div>
+    </div>
+
+    <!-- LISTA VEHÍCULOS -->
+    <div>
+      <div style="font-size:11px;font-weight:700;color:#dc2626;text-transform:uppercase;letter-spacing:.07em;margin-bottom:.5rem;display:flex;justify-content:space-between">
+        <span>🚗 Vehículos</span>
+        <span id="act-vehiculo-count" style="color:#9ca3af;font-weight:400"></span>
+      </div>
+      <div id="act-vehiculo-list"><div class="empty">Sin vehículos registrados aún.</div></div>
+      <div id="act-vehiculo-total" style="display:none;background:#fef2f2;border-radius:8px;padding:.5rem .85rem;margin-top:.45rem;justify-content:space-between;align-items:center;font-size:13px;font-weight:700">
+        <span style="color:#dc2626">Total vehículos (valor estimado hoy):</span>
+        <span style="color:#dc2626;font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900" id="act-vehiculo-total-val">RD$0</span>
       </div>
     </div>
   </div>
@@ -2596,6 +2630,14 @@ var ACTIVOS_NOMBRES = {
     {nombre:'Medoixas ALC, SRL',           zona:''},
     {nombre:'Oxymat (Ferretería Oxymat)',  zona:''},
     {nombre:'Otra Empresa',                zona:''}
+  ],
+  vehiculo:[
+    {nombre:'Automóvil / Carro',    zona:''},
+    {nombre:'Pickup / Camioneta',   zona:''},
+    {nombre:'SUV / Jeepeta',        zona:''},
+    {nombre:'Motocicleta',          zona:''},
+    {nombre:'Camión',               zona:''},
+    {nombre:'Otro Vehículo',        zona:''}
   ]
 };
 
@@ -2615,7 +2657,24 @@ function updateActivoNombres(){
   sel.innerHTML = opts.map(function(o){
     return '<option value="'+o.nombre+'|'+o.zona+'">'+o.nombre+'</option>';
   }).join('');
-  if(zonaR) zonaR.style.display = cat==='empresa'?'none':'';
+  // Mostrar/ocultar zona (solo inmuebles)
+  if(zonaR) zonaR.style.display = (cat==='empresa'||cat==='vehiculo')?'none':'';
+  // Mostrar/ocultar sección vehículo
+  var vehSec  = document.getElementById('act-vehiculo-section');
+  var tasasR  = document.getElementById('act-tasas-row');
+  var notaTa  = document.getElementById('act-nota-tasas');
+  var lblVal  = document.getElementById('act-valor-label');
+  if(cat==='vehiculo'){
+    if(vehSec)  vehSec.style.display  = '';
+    if(tasasR)  tasasR.style.display  = 'none';
+    if(notaTa)  notaTa.style.display  = 'none';
+    if(lblVal)  lblVal.textContent    = 'Valor actual del vehículo (RD$)';
+  } else {
+    if(vehSec)  vehSec.style.display  = 'none';
+    if(tasasR)  tasasR.style.display  = '';
+    if(notaTa)  notaTa.style.display  = '';
+    if(lblVal)  lblVal.textContent    = 'Valor base (RD$)';
+  }
   syncZonaActivo();
 }
 
@@ -2631,7 +2690,14 @@ function calcValorActivo(item){
   var base  = parseFloat(item.valorBase)||0;
   var fecha = item.fechaBase ? new Date(item.fechaBase) : new Date();
   var años  = Math.max(0,(Date.now()-fecha.getTime())/(1000*60*60*24*365.25));
-  var tasa  = ((parseFloat(item.inflacion)||0)+(parseFloat(item.revalorizacion)||0))/100;
+  if(item.categoria==='vehiculo'){
+    // Vehículos: depreciación (pérdida de valor). Tasa almacenada en item.depreciacion
+    var dep = (parseFloat(item.depreciacion)||15)/100;
+    if(años===0) return base;
+    return Math.max(0, base * Math.pow(1-dep, años));
+  }
+  // Inmuebles y empresas: apreciación por inflación + revalorización
+  var tasa = ((parseFloat(item.inflacion)||0)+(parseFloat(item.revalorizacion)||0))/100;
   if(tasa===0||años===0) return base;
   return base * Math.pow(1+tasa, años);
 }
@@ -2639,17 +2705,32 @@ function calcValorActivo(item){
 function addActivo(){
   var cat   = document.getElementById('act-cat').value;
   var nomV  = (document.getElementById('act-nombre').value||'').split('|')[0].trim();
-  var zona  = cat==='empresa'?'N/A':(document.getElementById('act-zona').value||'');
+  var zona  = (cat==='empresa'||cat==='vehiculo')?'N/A':(document.getElementById('act-zona').value||'');
   var valor = parseFloat(document.getElementById('act-valor').value)||0;
   var fecha = document.getElementById('act-fecha').value;
-  var inf   = parseFloat(document.getElementById('act-inflacion').value)||0;
-  var reval = parseFloat(document.getElementById('act-revalorizacion').value)||0;
   var notas = (document.getElementById('act-notas').value||'').trim();
-  if(!nomV){ alert('Selecciona un activo'); return; }
+  if(!nomV){ alert('Selecciona el tipo de activo'); return; }
   if(!valor){ alert('Ingresa el valor base'); return; }
   if(!fecha){ alert('Ingresa la fecha del valor'); return; }
-  activosData.push({id:Date.now(),categoria:cat,nombre:nomV,zona:zona,
-    valorBase:valor,fechaBase:fecha,inflacion:inf,revalorizacion:reval,notas:notas});
+
+  var entry = {id:Date.now(), categoria:cat, nombre:nomV, zona:zona,
+               valorBase:valor, fechaBase:fecha, notas:notas};
+
+  if(cat==='vehiculo'){
+    var modelo = (document.getElementById('act-modelo').value||'').trim();
+    var dep    = parseFloat(document.getElementById('act-depreciacion').value)||15;
+    entry.modelo      = modelo;
+    entry.depreciacion = dep;
+    entry.inflacion   = 0;
+    entry.revalorizacion = 0;
+    // Limpiar
+    document.getElementById('act-modelo').value='';
+  } else {
+    entry.inflacion      = parseFloat(document.getElementById('act-inflacion').value)||0;
+    entry.revalorizacion = parseFloat(document.getElementById('act-revalorizacion').value)||0;
+  }
+
+  activosData.push(entry);
   saveActivos(); renderActivos(); renderPatrimonio();
   document.getElementById('act-valor').value='';
   document.getElementById('act-notas').value='';
@@ -2681,25 +2762,33 @@ function renderActivos(){
   var totInm=0, totEmp=0;
 
   function cardHTML(x){
-    var valEst=calcValorActivo(x);
-    var crecPct=x.valorBase>0?((valEst-x.valorBase)/x.valorBase*100).toFixed(1):0;
-    var años=x.fechaBase?Math.max(0,(Date.now()-new Date(x.fechaBase).getTime())/(1000*60*60*24*365.25)).toFixed(1):0;
-    var color=x.categoria==='inmueble'?'#7c3aed':'#1e40af';
-    var bg=x.categoria==='inmueble'?'#f5f3ff':'#eff6ff';
-    var bdr=x.categoria==='inmueble'?'#ddd6fe':'#bfdbfe';
+    var valEst   = calcValorActivo(x);
+    var cambPct  = x.valorBase>0?((valEst-x.valorBase)/x.valorBase*100).toFixed(1):0;
+    var años     = x.fechaBase?Math.max(0,(Date.now()-new Date(x.fechaBase).getTime())/(1000*60*60*24*365.25)).toFixed(1):0;
+    var esVeh    = x.categoria==='vehiculo';
+    var color    = esVeh?'#b91c1c': x.categoria==='inmueble'?'#7c3aed':'#1e40af';
+    var bg       = esVeh?'#fef2f2': x.categoria==='inmueble'?'#f5f3ff':'#eff6ff';
+    var bdr      = esVeh?'#fca5a5': x.categoria==='inmueble'?'#ddd6fe':'#bfdbfe';
+    var nombreMostrar = x.nombre + (x.modelo?' — '+x.modelo:'');
+    var tasaInfo = esVeh
+      ? '📉 Depreciación: '+(x.depreciacion||15)+'% anual · '+(parseFloat(años)>0?años+' año(s)':'Reciente')
+      : '📈 '+x.inflacion+'% inflación + '+x.revalorizacion+'% revalorización'+(parseFloat(años)>0?' · '+años+' año(s)':' · Reciente');
+    var cambioBadge = esVeh
+      ? (parseFloat(cambPct)<0?'<div style="font-size:11px;color:#dc2626;font-weight:700">📉 '+cambPct+'%</div>':'')
+      : (parseFloat(cambPct)>0?'<div style="font-size:11px;color:#15803d;font-weight:700">▲ +'+cambPct+'%</div>':'');
     return '<div style="background:'+bg+';border:1px solid '+bdr+';border-radius:10px;padding:.75rem;margin-bottom:.45rem">'
       +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem">'
       +'<div style="flex:1">'
-        +'<div style="font-weight:700;font-size:14px;color:'+color+'">'+x.nombre
+        +'<div style="font-weight:700;font-size:14px;color:'+color+'">'+nombreMostrar
           +(x.zona&&x.zona!=='N/A'?' <span style="background:'+color+';color:#fff;font-size:10px;padding:1px 6px;border-radius:99px;font-weight:700">'+x.zona+'</span>':'')
         +'</div>'
-        +'<div style="font-size:12px;color:#6b7280;margin-top:2px">Valor base: '+fmtRD(x.valorBase)+' · '+x.fechaBase+(x.notas?' · '+x.notas:'')+'</div>'
-        +'<div style="font-size:11px;color:#9ca3af;margin-top:1px">📈 '+x.inflacion+'% inflación + '+x.revalorizacion+'% revalorización'+(parseFloat(años)>0?' · '+años+' año(s)':' · Reciente')+'</div>'
+        +'<div style="font-size:12px;color:#6b7280;margin-top:2px">Valor registrado: '+fmtRD(x.valorBase)+' · '+x.fechaBase+(x.notas?' · '+x.notas:'')+'</div>'
+        +'<div style="font-size:11px;color:#9ca3af;margin-top:1px">'+tasaInfo+'</div>'
         +(x.ultimaActualizacion?'<div style="font-size:10px;color:#9ca3af">🕐 Actualizado: '+x.ultimaActualizacion+'</div>':'')
       +'</div>'
       +'<div style="text-align:right;flex-shrink:0">'
         +'<div style="font-weight:900;font-size:16px;color:'+color+';font-family:\'Barlow Condensed\',sans-serif">'+fmtRD(Math.round(valEst))+'</div>'
-        +(parseFloat(crecPct)>0?'<div style="font-size:11px;color:#15803d;font-weight:700">▲ +'+crecPct+'%</div>':'')
+        +cambioBadge
         +'<div style="display:flex;gap:.3rem;justify-content:flex-end;margin-top:5px">'
           +'<button onclick="editarActivo('+x.id+')" style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;padding:2px 8px;color:#374151">✏️</button>'
           +'<button onclick="removeActivo('+x.id+')" style="background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;cursor:pointer;color:#dc2626;font-size:11px;font-weight:700;padding:2px 8px">✕</button>'
@@ -2707,8 +2796,13 @@ function renderActivos(){
       +'</div></div></div>';
   }
 
+  var vehiculos = activosData.filter(function(x){return x.categoria==='vehiculo';});
+  var totVeh=0;
+
   var inmEl=document.getElementById('act-inmueble-list');
   var empEl=document.getElementById('act-empresa-list');
+  var vehEl=document.getElementById('act-vehiculo-list');
+
   if(inmEl){
     if(!inmuebles.length){ inmEl.innerHTML='<div class="empty">Sin inmuebles registrados aún.</div>'; }
     else { inmEl.innerHTML=inmuebles.map(function(x){totInm+=calcValorActivo(x);return cardHTML(x);}).join(''); }
@@ -2724,6 +2818,14 @@ function renderActivos(){
     if(cEl2) cEl2.textContent=empresas.length>0?empresas.length+' empresa(s)':'';
     var tEl2=document.getElementById('act-empresa-total');
     if(tEl2){ if(empresas.length){tEl2.style.display='flex';setText('act-empresa-total-val',fmtRD(Math.round(totEmp)));}else{tEl2.style.display='none';} }
+  }
+  if(vehEl){
+    if(!vehiculos.length){ vehEl.innerHTML='<div class="empty">Sin vehículos registrados aún.</div>'; }
+    else { vehEl.innerHTML=vehiculos.map(function(x){totVeh+=calcValorActivo(x);return cardHTML(x);}).join(''); }
+    var cEl3=document.getElementById('act-vehiculo-count');
+    if(cEl3) cEl3.textContent=vehiculos.length>0?vehiculos.length+' vehículo(s)':'';
+    var tEl3=document.getElementById('act-vehiculo-total');
+    if(tEl3){ if(vehiculos.length){tEl3.style.display='flex';setText('act-vehiculo-total-val',fmtRD(Math.round(totVeh)));}else{tEl3.style.display='none';} }
   }
 }
 
