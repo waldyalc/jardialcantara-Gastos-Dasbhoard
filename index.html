@@ -850,6 +850,40 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--ink);min-hei
         <button onclick="actualizarPreciosPortafolio()" style="background:#f0f9ff;border:1px solid #93c5fd;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;color:#1e40af;cursor:pointer" id="inv2-update-btn">🔄 Actualizar precios</button>
       </div>
       <div id="inv2-list"></div>
+
+      <!-- EFECTIVO EN BROKERS -->
+      <div style="margin-top:.85rem;padding-top:.85rem;border-top:1px solid var(--lgray)">
+        <div style="font-size:11px;font-weight:700;color:#0891b2;text-transform:uppercase;letter-spacing:.07em;margin-bottom:.6rem">💵 Efectivo en Brokers · Cash disponible</div>
+        <div class="g2" style="margin-bottom:.5rem">
+          <div class="fl" style="margin-bottom:0">
+            <label>Broker / Plataforma</label>
+            <input type="text" id="cash-broker-nom" placeholder="IBKR, Schwab, TD Ameritrade..."/>
+          </div>
+          <div class="fl" style="margin-bottom:0">
+            <label>Efectivo (USD)</label>
+            <input type="number" id="cash-broker-monto" placeholder="0.00" inputmode="decimal" min="0" step="0.01"
+              onkeydown="if(event.key==='Enter') addCashBroker()"/>
+          </div>
+        </div>
+        <button class="btn btn-outline btn-w" style="font-size:13px;border-color:#0891b2;color:#0891b2" onclick="addCashBroker()">+ Registrar cash disponible</button>
+        <div id="cash-broker-list" style="margin-top:.6rem"></div>
+        <!-- Resumen posiciones + cash -->
+        <div id="inv2-resumen-total" style="display:none;background:var(--lgray);border-radius:10px;padding:.75rem;margin-top:.65rem">
+          <div style="font-size:11px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem">📊 Resumen Total en Plataformas</div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+            <span style="color:#374151">💼 Posiciones invertidas:</span>
+            <strong id="inv2-res-posiciones" style="color:#15803d">$0</strong>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+            <span style="color:#374151">💵 Cash esperando oportunidad:</span>
+            <strong id="inv2-res-cash" style="color:#0891b2">$0</strong>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;border-top:1px solid #e5e7eb;padding-top:6px;margin-top:4px">
+            <span>📈 Total en plataformas:</span>
+            <strong id="inv2-res-total" style="color:#1e40af;font-family:'Barlow Condensed',sans-serif;font-size:18px">$0</strong>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- AHORROS E INVERSIONES BANCARIAS -->
@@ -1232,7 +1266,8 @@ function recargarVariables(){
   try{ inv2Data    = JSON.parse(localStorage.getItem('sclf_inv2')     ||'[]'); }catch(e){ inv2Data=[]; }
   try{ banData     = JSON.parse(localStorage.getItem('sclf_ban')      ||'[]'); }catch(e){ banData=[]; }
   try{ sobData     = JSON.parse(localStorage.getItem('sclf_sob')      ||'{}'); }catch(e){ sobData={}; }
-  try{ activosData = JSON.parse(localStorage.getItem('sclf_activos')  ||'[]'); }catch(e){ activosData=[]; }
+  try{ activosData     = JSON.parse(localStorage.getItem('sclf_activos')     ||'[]'); }catch(e){ activosData=[]; }
+  try{ cashBrokerData = JSON.parse(localStorage.getItem('sclf_cash_broker') ||'[]'); }catch(e){ cashBrokerData=[]; }
 }
 
 function togglePassword(){
@@ -2480,9 +2515,12 @@ function renderPatrimonio(){
     } else { alertaEl.style.display='none'; }
   }
 
-  // ── Inversiones en bolsa ──
+  // ── Inversiones en bolsa + cash en brokers ──
   var inv2El=document.getElementById('inv2-list');
-  var totBolsa=inv2Data.reduce(function(s,x){ return s+x.total; },0);
+  var totPosiciones = inv2Data.reduce(function(s,x){ return s+x.total; },0);
+  var totCashBroker = (typeof cashBrokerData!=='undefined'?cashBrokerData:[]).reduce(function(s,x){ return s+x.monto; },0);
+  var totBolsa = totPosiciones + totCashBroker; // total en plataformas = posiciones + cash
+  renderCashBroker();
   if(inv2El){
     if(!inv2Data.length){ inv2El.innerHTML='<div class="empty">Sin activos registrados aún.</div>'; }
     else {
@@ -3010,6 +3048,74 @@ function renderActivos(){
       :vehiculos.map(cardHTML).join('');
     hdrHTML('act-vehiculo-count','Vehículos',totVeh,'#b91c1c');
     showTotal('act-vehiculo-total','act-vehiculo-total-val',totVeh,'#b91c1c',vehiculos);
+  }
+}
+
+// ══ EFECTIVO EN BROKERS (CASH) ══════════════════════════════════════
+
+var cashBrokerData = [];
+try{ cashBrokerData = JSON.parse(localStorage.getItem('sclf_cash_broker')||'[]'); }catch(e){}
+
+function saveCashBroker(){
+  try{
+    localStorage.setItem('sclf_cash_broker', JSON.stringify(cashBrokerData));
+    syncNube('sclf_cash_broker', cashBrokerData);
+  }catch(e){}
+}
+
+function addCashBroker(){
+  var broker = (document.getElementById('cash-broker-nom').value||'').trim();
+  var monto  = parseFloat(document.getElementById('cash-broker-monto').value)||0;
+  if(!broker){ alert('Ingresa el nombre del broker'); return; }
+  if(!monto)  { alert('Ingresa el monto de cash disponible'); return; }
+  var existing = cashBrokerData.find(function(x){ return x.broker.toLowerCase()===broker.toLowerCase(); });
+  if(existing){
+    if(!confirm('Ya hay cash registrado en "'+broker+'" ($'+existing.monto+').\n¿Actualizar al nuevo monto $'+monto+'?')) return;
+    existing.monto = monto;
+    existing.fecha = new Date().toLocaleDateString('es-DO');
+  } else {
+    cashBrokerData.push({ id:Date.now(), broker:broker, monto:monto, fecha:new Date().toLocaleDateString('es-DO') });
+  }
+  saveCashBroker(); renderCashBroker(); renderPatrimonio();
+  document.getElementById('cash-broker-nom').value='';
+  document.getElementById('cash-broker-monto').value='';
+}
+
+function removeCashBroker(id){
+  cashBrokerData = cashBrokerData.filter(function(x){ return x.id!==id; });
+  saveCashBroker(); renderCashBroker(); renderPatrimonio();
+}
+
+function renderCashBroker(){
+  var el    = document.getElementById('cash-broker-list');
+  var resEl = document.getElementById('inv2-resumen-total');
+  if(!el) return;
+  var totCash = cashBrokerData.reduce(function(s,x){ return s+x.monto; },0);
+  var totPos  = inv2Data.reduce(function(s,x){ return s+x.total; },0);
+  var totAll  = totCash + totPos;
+  if(!cashBrokerData.length){
+    el.innerHTML='<div class="empty" style="font-size:12px;padding:.4rem 0">Sin cash registrado aún.</div>';
+  } else {
+    el.innerHTML=cashBrokerData.map(function(x){
+      return '<div style="display:flex;justify-content:space-between;align-items:center;background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;padding:.45rem .7rem;margin-bottom:.3rem">'
+        +'<div>'
+          +'<div style="font-weight:700;font-size:13px;color:#0e7490">'+x.broker+'</div>'
+          +'<div style="font-size:10px;color:#9ca3af">💵 Cash disponible · '+x.fecha+'</div>'
+        +'</div>'
+        +'<div style="display:flex;align-items:center;gap:.45rem">'
+          +'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:17px;font-weight:900;color:#0891b2">$'
+            +x.monto.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+'</div>'
+          +'<button onclick="removeCashBroker('+x.id+')" style="background:#fef2f2;border:1px solid #fca5a5;border-radius:5px;cursor:pointer;color:#dc2626;font-size:10px;font-weight:700;padding:2px 6px">✕</button>'
+        +'</div></div>';
+    }).join('');
+  }
+  if(resEl){
+    if(totAll>0){
+      resEl.style.display='block';
+      setText('inv2-res-posiciones','$'+totPos.toLocaleString('en-US',{minimumFractionDigits:2}));
+      setText('inv2-res-cash',      '$'+totCash.toLocaleString('en-US',{minimumFractionDigits:2}));
+      setText('inv2-res-total',     '$'+totAll.toLocaleString('en-US',{minimumFractionDigits:2}));
+    } else { resEl.style.display='none'; }
   }
 }
 
