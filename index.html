@@ -339,6 +339,11 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--ink);min-hei
       <div style="margin-top:1rem;padding-top:.85rem;border-top:1px solid var(--lgray)">
         <div class="ct" style="margin-bottom:.75rem">🛡️ Fondo de Emergencia</div>
 
+        <!-- Nota Banco BDI -->
+        <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;padding:.7rem .85rem;margin-bottom:.65rem;font-size:12px;color:#92400e;display:flex;align-items:center;gap:.5rem">
+          🏦 <span>El Fondo de Emergencia está depositado en <strong>Banco BDI</strong>. Registra las cuentas en <button onclick="showTab('patrimonio',document.querySelectorAll('.tab')[5])" style="background:none;border:none;color:#C9A84C;font-weight:700;cursor:pointer;font-size:12px;padding:0;text-decoration:underline">💎 Patrimonio</button> marcándolas como 🛡️ Fondo de Emergencia.</span>
+        </div>
+
         <!-- PESOS -->
         <div style="background:var(--lgray);border-radius:10px;padding:.85rem;margin-bottom:.65rem">
           <div style="font-size:12px;font-weight:700;color:var(--dgray);margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.04em">🇩🇴 En Pesos Dominicanos (RD$)</div>
@@ -347,13 +352,15 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--ink);min-hei
               <label>Meta (RD$)</label>
               <input type="number" id="fondo-meta-dop" placeholder="500,000" inputmode="decimal" oninput="updateFondo()"/>
             </div>
-            <div class="fl" style="margin-bottom:0">
-              <label>Acumulado (RD$)</label>
-              <input type="number" id="fondo-acu-dop" placeholder="0" inputmode="decimal" oninput="updateFondo()"/>
+            <div style="margin-bottom:0">
+              <div style="font-size:11px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.04em;margin-bottom:.3rem">🏦 Depositado BDI</div>
+              <div id="fondo-acu-dop-display" style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;color:var(--green)">RD$ 0</div>
+              <div style="font-size:10px;color:var(--mgray);margin-top:1px">desde cuentas marcadas como 🛡️ FE</div>
+              <input type="hidden" id="fondo-acu-dop" value="0"/>
             </div>
           </div>
           <div class="pbar" style="margin-top:.6rem"><div class="pfill" id="fondo-bar-dop" style="width:0%;background:var(--gold)"></div></div>
-          <div style="font-size:12px;color:var(--mgray);margin-top:5px" id="fondo-lbl-dop">Ingresa tu meta y lo acumulado</div>
+          <div style="font-size:12px;color:var(--mgray);margin-top:5px" id="fondo-lbl-dop">Ingresa tu meta en pesos</div>
         </div>
 
         <!-- DÓLARES -->
@@ -364,18 +371,20 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--ink);min-hei
               <label>Meta (USD)</label>
               <input type="number" id="fondo-meta-usd" placeholder="5,000" inputmode="decimal" oninput="updateFondo()"/>
             </div>
-            <div class="fl" style="margin-bottom:0">
-              <label>Acumulado (USD)</label>
-              <input type="number" id="fondo-acu-usd" placeholder="0" inputmode="decimal" oninput="updateFondo()"/>
+            <div style="margin-bottom:0">
+              <div style="font-size:11px;font-weight:700;color:#1e40af;text-transform:uppercase;letter-spacing:.04em;margin-bottom:.3rem">🏦 Depositado BDI</div>
+              <div id="fondo-acu-usd-display" style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;color:var(--blue)">$ 0</div>
+              <div style="font-size:10px;color:var(--mgray);margin-top:1px">desde cuentas marcadas como 🛡️ FE</div>
+              <input type="hidden" id="fondo-acu-usd" value="0"/>
             </div>
           </div>
           <div class="pbar" style="margin-top:.6rem"><div class="pfill" id="fondo-bar-usd" style="width:0%;background:var(--blue)"></div></div>
-          <div style="font-size:12px;color:var(--mgray);margin-top:5px" id="fondo-lbl-usd">Ingresa tu meta y lo acumulado</div>
+          <div style="font-size:12px;color:var(--mgray);margin-top:5px" id="fondo-lbl-usd">Ingresa tu meta en dólares</div>
         </div>
 
         <!-- RESUMEN TOTAL -->
         <div id="fondo-resumen" style="display:none;margin-top:.65rem;background:var(--ink);border-radius:10px;padding:.85rem;color:var(--white)">
-          <div style="font-size:11px;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem">Progreso Global</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem">Progreso Global · 🏦 Banco BDI</div>
           <div style="display:flex;justify-content:space-between;align-items:center">
             <span id="fondo-resumen-txt" style="font-size:13px;color:rgba(255,255,255,.8)"></span>
             <span id="fondo-resumen-pct" style="font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;color:var(--gold)"></span>
@@ -1400,9 +1409,23 @@ function renderChart5030(){
 }
 
 function updateFondo(){
+  // ── Auto-calcular desde cuentas bancarias marcadas como FE (Banco BDI) ──
+  var acuDOP = (typeof banData!=='undefined' ? banData : [])
+    .filter(function(x){ return x.esEF && x.moneda==='DOP'; })
+    .reduce(function(s,x){ return s+x.monto; }, 0);
+  var acuUSD = (typeof banData!=='undefined' ? banData : [])
+    .filter(function(x){ return x.esEF && x.moneda==='USD'; })
+    .reduce(function(s,x){ return s+x.monto; }, 0);
+  // Actualizar hidden inputs (usados por renderPatrimonio) y displays
+  var hidDOP = document.getElementById('fondo-acu-dop'); if(hidDOP) hidDOP.value = acuDOP;
+  var hidUSD = document.getElementById('fondo-acu-usd'); if(hidUSD) hidUSD.value = acuUSD;
+  var dispDOP = document.getElementById('fondo-acu-dop-display');
+  var dispUSD = document.getElementById('fondo-acu-usd-display');
+  if(dispDOP) dispDOP.textContent = 'RD$'+acuDOP.toLocaleString('en-US');
+  if(dispUSD) dispUSD.textContent = '$'+acuUSD.toLocaleString('en-US');
+
   // ── PESOS ──
   var metaDOP = parseFloat(document.getElementById('fondo-meta-dop').value)||0;
-  var acuDOP  = parseFloat(document.getElementById('fondo-acu-dop').value)||0;
   var barDOP  = document.getElementById('fondo-bar-dop');
   if(metaDOP > 0){
     var pctDOP = Math.min(100, Math.round((acuDOP/metaDOP)*100));
@@ -1412,13 +1435,12 @@ function updateFondo(){
     setText('fondo-lbl-dop',
       pctDOP+'% completado · '+(pctDOP>=100?'✅ Meta alcanzada':'Faltan RD$'+faltanDOP.toLocaleString('en-US')));
   } else {
-    barDOP.style.width='0%';
+    if(barDOP) barDOP.style.width='0%';
     setText('fondo-lbl-dop','Ingresa tu meta en pesos');
   }
 
   // ── DÓLARES ──
   var metaUSD = parseFloat(document.getElementById('fondo-meta-usd').value)||0;
-  var acuUSD  = parseFloat(document.getElementById('fondo-acu-usd').value)||0;
   var barUSD  = document.getElementById('fondo-bar-usd');
   if(metaUSD > 0){
     var pctUSD = Math.min(100, Math.round((acuUSD/metaUSD)*100));
@@ -1451,9 +1473,9 @@ function updateFondo(){
     resumen.style.display = 'none';
   }
 
-  // Guardar en localStorage + nube
+  // Guardar solo las metas (el acumulado viene de las cuentas BDI, no se guarda)
   try{
-    var fondoObj = { metaDOP:metaDOP, acuDOP:acuDOP, metaUSD:metaUSD, acuUSD:acuUSD };
+    var fondoObj = { metaDOP:metaDOP, metaUSD:metaUSD };
     localStorage.setItem('sclf_fondo', JSON.stringify(fondoObj));
     syncNube('sclf_fondo', fondoObj);
   }catch(e){}
@@ -1683,13 +1705,11 @@ function initAppContent(){
   var fechaEl = document.getElementById('tx-fecha');
   if(fechaEl) fechaEl.value = hoy;
 
-  // Restaurar fondo de emergencia
+  // Restaurar metas del fondo de emergencia (el acumulado viene de las cuentas BDI)
   try{
     var fondoSaved = JSON.parse(localStorage.getItem('sclf_fondo')||'{}');
     if(fondoSaved.metaDOP){ var el=document.getElementById('fondo-meta-dop'); if(el) el.value=fondoSaved.metaDOP; }
-    if(fondoSaved.acuDOP) { var el=document.getElementById('fondo-acu-dop');  if(el) el.value=fondoSaved.acuDOP;  }
     if(fondoSaved.metaUSD){ var el=document.getElementById('fondo-meta-usd'); if(el) el.value=fondoSaved.metaUSD; }
-    if(fondoSaved.acuUSD) { var el=document.getElementById('fondo-acu-usd');  if(el) el.value=fondoSaved.acuUSD;  }
     if(fondoSaved.metaDOP||fondoSaved.metaUSD) updateFondo();
   }catch(e){}
 
@@ -2263,19 +2283,14 @@ function fetchTasaBCRD(){
 }
 
 function renderPatrimonio(){
-  // ── Fondo de emergencia (desde el formulario de presupuesto) ──
-  var efDOPacu  = parseFloat(localStorage.getItem('_ef_dop_acu')||'0');
-  var efDOPmeta = parseFloat(localStorage.getItem('_ef_dop_meta')||'0');
-  var efUSDacu  = parseFloat(localStorage.getItem('_ef_usd_acu')||'0');
-  var efUSDmeta = parseFloat(localStorage.getItem('_ef_usd_meta')||'0');
-
-  // Leer del formulario del fondo si existe
-  var dAcu=parseFloat((document.getElementById('fondo-acu-dop')||{}).value||'0');
-  var dMet=parseFloat((document.getElementById('fondo-meta-dop')||{}).value||'0');
-  var uAcu=parseFloat((document.getElementById('fondo-acu-usd')||{}).value||'0');
-  var uMet=parseFloat((document.getElementById('fondo-meta-usd')||{}).value||'0');
-  if(dAcu||dMet){ efDOPacu=dAcu; efDOPmeta=dMet; }
-  if(uAcu||uMet){ efUSDacu=uAcu; efUSDmeta=uMet; }
+  // ── Fondo de emergencia: calculado directamente desde cuentas Banco BDI marcadas como FE ──
+  var fondoGuardado = {}; try{ fondoGuardado = JSON.parse(localStorage.getItem('sclf_fondo')||'{}'); }catch(e){}
+  // Acumulado = suma de cuentas bancarias con esEF:true (Banco BDI)
+  var efDOPacu  = banData.filter(function(x){ return x.esEF && x.moneda==='DOP'; }).reduce(function(s,x){ return s+x.monto; }, 0);
+  var efUSDacu  = banData.filter(function(x){ return x.esEF && x.moneda==='USD'; }).reduce(function(s,x){ return s+x.monto; }, 0);
+  // Meta viene del formulario de presupuesto
+  var efDOPmeta = parseFloat((document.getElementById('fondo-meta-dop')||{}).value||'0') || parseFloat(fondoGuardado.metaDOP||'0');
+  var efUSDmeta = parseFloat((document.getElementById('fondo-meta-usd')||{}).value||'0') || parseFloat(fondoGuardado.metaUSD||'0');
 
   setText('pat-ef-dop-acu','RD$'+efDOPacu.toLocaleString('en-US'));
   setText('pat-ef-dop-meta','RD$'+efDOPmeta.toLocaleString('en-US'));
@@ -2420,9 +2435,9 @@ function renderPatrimonio(){
   // ── Totales generales ──
   var tasa = getTasaCambio();
 
-  // Fondo de emergencia TOTAL = formulario + cuentas bancarias marcadas como EF
-  var efDOPtotal = efDOPacu + totEFbanDOP;
-  var efUSDtotal = efUSDacu + totEFbanUSD;
+  // Fondo de emergencia TOTAL = ya pre-calculado desde banData (sin doble conteo)
+  var efDOPtotal = efDOPacu; // = totEFbanDOP (calculado al inicio desde banData)
+  var efUSDtotal = efUSDacu; // = totEFbanUSD (calculado al inicio desde banData)
 
   // Convertir todo a RD$
   var bolsaEnRD     = totBolsa   * tasa;
@@ -2448,13 +2463,13 @@ function renderPatrimonio(){
   if(efUSDtotalRD>0)desglose += ' · Fondo Emerg. USD: $'+efUSDtotal.toFixed(0)+' = '+fmtRD(efUSDtotalRD);
   setText('pat-total-desglose', desglose);
 
-  // Actualizar la sección de EF con los valores reales de las cuentas bancarias marcadas
-  if(totEFbanDOP>0 || totEFbanUSD>0){
-    var efDopEl = document.getElementById('pat-ef-dop-acu');
-    var efUsdEl = document.getElementById('pat-ef-usd-acu');
-    if(efDopEl && totEFbanDOP>0) efDopEl.textContent = 'RD$'+efDOPtotal.toLocaleString('en-US');
-    if(efUsdEl && totEFbanUSD>0) efUsdEl.textContent = '$'+efUSDtotal.toLocaleString('en-US');
-  }
+  // Refrescar también el display del FE en la pestaña Presupuesto
+  var efDispDOP = document.getElementById('fondo-acu-dop-display');
+  var efDispUSD = document.getElementById('fondo-acu-usd-display');
+  if(efDispDOP) efDispDOP.textContent = 'RD$'+efDOPtotal.toLocaleString('en-US');
+  if(efDispUSD) efDispUSD.textContent = '$'+efUSDtotal.toLocaleString('en-US');
+  var efHidDOP = document.getElementById('fondo-acu-dop'); if(efHidDOP) efHidDOP.value = efDOPtotal;
+  var efHidUSD = document.getElementById('fondo-acu-usd'); if(efHidUSD) efHidUSD.value = efUSDtotal;
 }
 
 function recalcProyTotals(){
