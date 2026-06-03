@@ -2598,8 +2598,8 @@ function renderPatrimonio(){
     var el=document.getElementById(id);
     if(!el) return;
     if(netoRD>0 && val>0){
-      var p=Math.round(val/netoRD*100);
-      el.textContent = p+'% del total';
+      var p=(val/netoRD*100);
+      el.textContent = (p>=1?p.toFixed(1):p.toFixed(2))+'% del total';
     } else { el.textContent=''; }
   }
   setPct('pat-pct-bolsa',    bolsaEnRD);
