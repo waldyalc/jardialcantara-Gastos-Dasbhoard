@@ -732,6 +732,7 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--ink);min-hei
           <div style="font-size:9px;color:rgba(255,255,255,.4);margin-bottom:3px">🏠 INMUEBLES</div>
           <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;color:#c4b5fd" id="pat-tot-inmuebles">RD$0</div>
           <div id="pat-pct-inmuebles" style="font-size:9px;color:rgba(255,255,255,.35);margin-top:2px"></div>
+          <div id="pat-inmuebles-breakdown" style="font-size:9px;color:rgba(255,255,255,.4);margin-top:5px;border-top:1px solid rgba(255,255,255,.1);padding-top:4px;line-height:1.7;text-align:left"></div>
         </div>
         <div style="background:rgba(30,64,175,.25);border-radius:10px;padding:.65rem .5rem;text-align:center;border:1px solid rgba(96,165,250,.25)">
           <div style="font-size:9px;color:rgba(255,255,255,.4);margin-bottom:3px">🏢 EMPRESAS</div>
@@ -953,6 +954,13 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--ink);min-hei
         <select id="act-zona">
           <option value="Urbana">🏙️ Urbana</option>
           <option value="Rural">🌿 Rural</option>
+        </select>
+      </div>
+      <div id="act-uso-row" class="fl" style="margin-bottom:.6rem;display:none">
+        <label>Uso del inmueble</label>
+        <select id="act-uso">
+          <option value="propio">🏠 Uso propio — no genera renta activa</option>
+          <option value="renta">💰 Genera alquiler / renta</option>
         </select>
       </div>
       <!-- Sección específica VEHÍCULO -->
@@ -2590,9 +2598,11 @@ function renderPatrimonio(){
 
   // Otros activos: inmuebles + empresas + vehículos (valor estimado hoy en RD$)
   var _act = typeof activosData!=='undefined'?activosData:[];
-  var totInmRD = _act.filter(function(x){return x.categoria==='inmueble';}).reduce(function(s,x){return s+calcValorActivo(x);},0);
-  var totEmpRD = _act.filter(function(x){return x.categoria==='empresa'; }).reduce(function(s,x){return s+calcValorActivo(x);},0);
-  var totVehRD = _act.filter(function(x){return x.categoria==='vehiculo';}).reduce(function(s,x){return s+calcValorActivo(x);},0);
+  var totInmRD    = _act.filter(function(x){return x.categoria==='inmueble';}).reduce(function(s,x){return s+calcValorActivo(x);},0);
+  var totInmRenta = _act.filter(function(x){return x.categoria==='inmueble'&&x.uso==='renta';}).reduce(function(s,x){return s+calcValorActivo(x);},0);
+  var totInmPropio= _act.filter(function(x){return x.categoria==='inmueble'&&x.uso!=='renta';}).reduce(function(s,x){return s+calcValorActivo(x);},0);
+  var totEmpRD    = _act.filter(function(x){return x.categoria==='empresa'; }).reduce(function(s,x){return s+calcValorActivo(x);},0);
+  var totVehRD    = _act.filter(function(x){return x.categoria==='vehiculo';}).reduce(function(s,x){return s+calcValorActivo(x);},0);
   var totActivosRD = totInmRD + totEmpRD + totVehRD;
 
   // Convertir todo a RD$
@@ -2631,6 +2641,16 @@ function renderPatrimonio(){
   setText('pat-tot-empresas',  fmtRD(Math.round(totEmpRD)));
   setText('pat-tot-vehiculos', fmtRD(Math.round(totVehRD)));
   setPct('pat-pct-inmuebles',  totInmRD);
+  // Breakdown renta vs uso propio dentro del card INMUEBLES
+  var inmBkdEl = document.getElementById('pat-inmuebles-breakdown');
+  if(inmBkdEl){
+    if(totInmRD > 0){
+      var bkd='';
+      if(totInmRenta>0)  bkd+='<span style="color:#86efac">💰 Renta: '+fmtRD(Math.round(totInmRenta))+'</span><br/>';
+      if(totInmPropio>0) bkd+='<span style="color:#d1d5db">🏠 Propio: '+fmtRD(Math.round(totInmPropio))+'</span>';
+      inmBkdEl.innerHTML=bkd;
+    } else { inmBkdEl.innerHTML=''; }
+  }
   setPct('pat-pct-empresas',   totEmpRD);
   setPct('pat-pct-vehiculos',  totVehRD);
 
@@ -2749,8 +2769,10 @@ function updateActivoNombres(){
   sel.innerHTML = opts.map(function(o){
     return '<option value="'+o.nombre+'|'+o.zona+'">'+o.nombre+'</option>';
   }).join('');
-  // Mostrar/ocultar zona (solo inmuebles)
+  // Mostrar/ocultar zona y uso (solo inmuebles)
   if(zonaR) zonaR.style.display = (cat==='empresa'||cat==='vehiculo')?'none':'';
+  var usoR = document.getElementById('act-uso-row');
+  if(usoR) usoR.style.display = cat==='inmueble'?'':'none';
   // Mostrar/ocultar sección vehículo
   var vehSec  = document.getElementById('act-vehiculo-section');
   var tasasR  = document.getElementById('act-tasas-row');
@@ -2805,7 +2827,8 @@ function addActivo(){
   if(!valor){ alert('Ingresa el valor base'); return; }
   if(!fecha){ alert('Ingresa la fecha del valor'); return; }
 
-  var entry = {id:Date.now(), categoria:cat, nombre:nomV, zona:zona,
+  var uso = cat==='inmueble' ? (document.getElementById('act-uso').value||'propio') : '';
+  var entry = {id:Date.now(), categoria:cat, nombre:nomV, zona:zona, uso:uso,
                valorBase:valor, fechaBase:fecha, notas:notas};
 
   if(cat==='vehiculo'){
@@ -2838,6 +2861,14 @@ function editarActivo(id){
   if(nf===null) return;
   item.valorBase=v; item.fechaBase=nf;
   item.ultimaActualizacion=new Date().toLocaleDateString('es-DO');
+  if(item.categoria==='inmueble'){
+    var rentaActual = item.uso==='renta';
+    var cambiarUso = confirm(
+      '¿Este inmueble genera alquiler / renta?\n\n'
+      +'Estado actual: '+(rentaActual?'💰 Genera renta':'🏠 Uso propio')+'\n\n'
+      +'OK = Genera renta  ·  Cancelar = Uso propio');
+    item.uso = cambiarUso ? 'renta' : 'propio';
+  }
   saveActivos(); renderActivos(); renderPatrimonio();
 }
 
@@ -2876,6 +2907,11 @@ function renderActivos(){
     var bg      = esVeh?'#fff5f5':x.categoria==='inmueble'?'#faf5ff':'#eff6ff';
     var bdr     = esVeh?'#fca5a5':x.categoria==='inmueble'?'#ddd6fe':'#bfdbfe';
     var nomMost = x.nombre+(x.modelo?' · '+x.modelo:'');
+    var usoBadge = (x.categoria==='inmueble')
+      ? (x.uso==='renta'
+          ? ' <span style="background:#16a34a;color:#fff;font-size:9px;padding:1px 5px;border-radius:99px;font-weight:700">💰 RENTA</span>'
+          : ' <span style="background:#6b7280;color:#fff;font-size:9px;padding:1px 5px;border-radius:99px;font-weight:700">🏠 PROPIO</span>')
+      : '';
     var tInfo   = esVeh
       ? '📉 '+(x.depreciacion||15)+'% dep. anual · '+(parseFloat(años)>0?años+' a':'Reciente')
       : '📈 '+x.inflacion+'% inf. + '+x.revalorizacion+'% reval.'+(parseFloat(años)>0?' · '+años+' a':' · Reciente');
@@ -2887,8 +2923,9 @@ function renderActivos(){
     return '<div style="background:'+bg+';border:1px solid '+bdr+';border-radius:8px;padding:.45rem .6rem;margin-bottom:.3rem">'
       +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.4rem">'
       +'<div style="flex:1;min-width:0">'
-        +'<div style="font-weight:700;font-size:13px;color:'+color+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+nomMost
+        +'<div style="font-weight:700;font-size:13px;color:'+color+'">'+nomMost
           +(x.zona&&x.zona!=='N/A'?' <span style="background:'+color+';color:#fff;font-size:9px;padding:1px 5px;border-radius:99px">'+x.zona+'</span>':'')
+          +usoBadge
         +'</div>'
         +'<div style="font-size:10px;color:#6b7280;margin-top:1px">'+fmtRD(x.valorBase)+' · '+x.fechaBase+(x.notas?' · '+x.notas:'')+'</div>'
         +'<div style="font-size:10px;color:#9ca3af">'+tInfo+'</div>'
