@@ -700,25 +700,29 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--ink);min-hei
     <div style="font-size:11px;color:rgba(255,255,255,.35);margin-top:4px" id="pat-total-desglose">Todo convertido a RD$ usando la tasa registrada</div>
     <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:.65rem;margin-top:1rem">
       <div style="background:rgba(255,255,255,.06);border-radius:10px;padding:.75rem;text-align:center">
-        <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:3px">BOLSA</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:3px">📈 BOLSA</div>
         <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;color:#4487ff" id="pat-tot-bolsa">$0</div>
+        <div id="pat-pct-bolsa" style="font-size:10px;color:rgba(255,255,255,.35);margin-top:2px"></div>
       </div>
       <div style="background:rgba(255,255,255,.06);border-radius:10px;padding:.75rem;text-align:center">
-        <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:3px">BANCO</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:3px">🏦 BANCO</div>
         <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;color:#27c987" id="pat-tot-banco">RD$0</div>
+        <div id="pat-pct-banco" style="font-size:10px;color:rgba(255,255,255,.35);margin-top:2px"></div>
       </div>
       <div style="background:rgba(255,255,255,.06);border-radius:10px;padding:.75rem;text-align:center">
-        <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:3px">EMERGENCIA</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:3px">🛡️ EMERGENCIA</div>
         <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;color:var(--gold)" id="pat-tot-ef">RD$0</div>
+        <div id="pat-pct-ef" style="font-size:10px;color:rgba(255,255,255,.35);margin-top:2px"></div>
       </div>
       <div style="background:rgba(255,255,255,.06);border-radius:10px;padding:.75rem;text-align:center">
-        <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:3px">SOBRANTE MES</div>
-        <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900" id="pat-tot-sobrante" style="color:#27c987">RD$0</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:3px">💰 SOBRANTE MES</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900" id="pat-tot-sobrante">RD$0</div>
+        <div id="pat-pct-sobrante" style="font-size:10px;color:rgba(255,255,255,.35);margin-top:2px"></div>
       </div>
       <div style="background:rgba(124,58,237,.2);border-radius:10px;padding:.75rem;text-align:center;border:1px solid rgba(167,139,250,.3)">
         <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:3px">🏘️ ACTIVOS</div>
         <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;color:#a78bfa" id="pat-tot-activos">RD$0</div>
-        <div id="pat-tot-activos-breakdown" style="font-size:9px;color:rgba(255,255,255,.35);margin-top:3px;line-height:1.4"></div>
+        <div id="pat-pct-activos" style="font-size:10px;color:rgba(255,255,255,.35);margin-top:2px"></div>
       </div>
     </div>
   </div>
@@ -2589,20 +2593,22 @@ function renderPatrimonio(){
   if(sobTot) sobTot.style.color=sobrante>0?'#27c987':'#f25563';
   setText('pat-tot-activos', fmtRD(Math.round(totActivosRD)));
 
-  // ── Breakdown % en el card del dashboard ──
-  var bkdEl = document.getElementById('pat-tot-activos-breakdown');
-  if(bkdEl){
-    if(totActivosRD > 0){
-      var piInm=Math.round(totInmRD/totActivosRD*100);
-      var piEmp=Math.round(totEmpRD/totActivosRD*100);
-      var piVeh=100-piInm-piEmp;
-      bkdEl.innerHTML=(piInm>0?'🏠 '+piInm+'%':'')+
-                      (piEmp>0?' · 🏢 '+piEmp+'%':'')+
-                      (piVeh>0?' · 🚗 '+piVeh+'%':'');
-    } else { bkdEl.textContent=''; }
+  // ── % del patrimonio total que representa cada tipo ──
+  function setPct(id, val){
+    var el=document.getElementById(id);
+    if(!el) return;
+    if(netoRD>0 && val>0){
+      var p=Math.round(val/netoRD*100);
+      el.textContent = p+'% del total';
+    } else { el.textContent=''; }
   }
+  setPct('pat-pct-bolsa',    bolsaEnRD);
+  setPct('pat-pct-banco',    totBanDOP + banUSDenRD);
+  setPct('pat-pct-ef',       efDOPtotal + efUSDtotalRD);
+  setPct('pat-pct-sobrante', Math.max(0, sobrante));
+  setPct('pat-pct-activos',  totActivosRD);
 
-  // ── Gráfico de distribución de activos (donut + leyenda) ──
+  // ── Gráfico donut distribución interna de activos (inmueble/empresa/vehículo) ──
   var chartEl = document.getElementById('pat-activos-chart');
   if(chartEl){
     if(totActivosRD <= 0){ chartEl.style.display='none'; }
