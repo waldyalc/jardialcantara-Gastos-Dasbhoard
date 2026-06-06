@@ -698,6 +698,8 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--ink);min-hei
     <div style="font-size:11px;letter-spacing:.1em;color:rgba(255,255,255,.4);text-transform:uppercase;margin-bottom:.6rem">📊 Patrimonio Total Neto en RD$</div>
     <div style="font-family:'Barlow Condensed',sans-serif;font-size:52px;font-weight:900;color:var(--gold);line-height:1" id="pat-total-neto">RD$0</div>
     <div id="pat-total-neto-usd" style="font-size:13px;color:rgba(255,255,255,.4);margin-top:2px;letter-spacing:.02em"></div>
+    <!-- Ecuación Activos − Pasivos = Neto -->
+    <div id="pat-balance-eq" style="margin-top:8px;padding:6px 10px;background:rgba(255,255,255,.05);border-radius:8px;font-size:12px;display:none;flex-wrap:wrap;gap:4px;align-items:center"></div>
     <div style="font-size:11px;color:rgba(255,255,255,.35);margin-top:4px" id="pat-total-desglose">Todo convertido a RD$ usando la tasa registrada</div>
     <!-- Fila 1: Activos Financieros -->
     <div style="margin-top:.85rem">
@@ -2812,6 +2814,29 @@ function renderPatrimonio(){
   setText('pat-total-neto', fmtRD(netoRD));
   var usdTotEl = document.getElementById('pat-total-neto-usd');
   if(usdTotEl && tasa>0) usdTotEl.textContent = '≈ $'+Math.round(netoRD/tasa).toLocaleString('en-US')+' USD';
+
+  // ── Ecuación Activos − Pasivos = Patrimonio Neto ──
+  var brutosRD = netoRD + totDeudas;
+  var balEqEl  = document.getElementById('pat-balance-eq');
+  if(balEqEl){
+    if(brutosRD > 0){
+      balEqEl.style.display='flex';
+      var usdBruto = tasa>0?'<span style="font-size:10px;color:rgba(255,255,255,.3)"> ≈$'+Math.round(brutosRD/tasa).toLocaleString('en-US')+'</span>':'';
+      var usdDeu   = tasa>0&&totDeudas>0?'<span style="font-size:10px;color:rgba(255,255,255,.3)"> ≈$'+Math.round(totDeudas/tasa).toLocaleString('en-US')+'</span>':'';
+      var usdNeto  = tasa>0?'<span style="font-size:10px;color:rgba(255,255,255,.3)"> ≈$'+Math.round(netoRD/tasa).toLocaleString('en-US')+'</span>':'';
+      balEqEl.innerHTML=
+        '<span style="color:rgba(255,255,255,.45);font-size:11px">ACTIVOS</span>'
+       +'<span style="color:#86efac;font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700">'+fmtRD(Math.round(brutosRD))+'</span>'+usdBruto
+       +(totDeudas>0
+         ? '<span style="color:rgba(255,255,255,.35);font-size:13px;margin:0 2px">−</span>'
+          +'<span style="color:rgba(255,255,255,.45);font-size:11px">DEUDAS</span>'
+          +'<span style="color:#f87171;font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700">'+fmtRD(Math.round(totDeudas))+'</span>'+usdDeu
+          +'<span style="color:rgba(255,255,255,.35);font-size:13px;margin:0 2px">=</span>'
+          +'<span style="color:rgba(255,255,255,.45);font-size:11px">NETO</span>'
+          +'<span style="color:var(--gold);font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700">'+fmtRD(Math.round(netoRD))+'</span>'+usdNeto
+         : '');
+    } else { balEqEl.style.display='none'; }
+  }
   var desglose = 'Tasa: 1 USD = RD$'+tasa.toFixed(2);
   if(bolsaEnRD>0)    desglose += ' · Bolsa: $'+totBolsa.toFixed(0)+' = '+fmtRD(bolsaEnRD);
   if(banUSDenRD>0)   desglose += ' · Banco USD: $'+totBanUSD.toFixed(0)+' = '+fmtRD(banUSDenRD);
