@@ -1551,6 +1551,51 @@ var GRUPOS_GASTO = [
   { nombre:'🧴 Personal y Otros',color:'#9C27B0', cats:['Aseo Personal (Peluquería, Pedicure y Otros)','Aporte Mensual a Mamá','Otros Gastos'] }
 ];
 
+// ── Tooltip interactivo del gráfico de pastel ────────────────────────
+window._sclfPastelGrupos = [];
+
+function sclfChartHover(e, el){
+  var grupos = window._sclfPastelGrupos;
+  if(!grupos || !grupos.length) return;
+  var rect = el.getBoundingClientRect();
+  var cx   = rect.left + rect.width  / 2;
+  var cy   = rect.top  + rect.height / 2;
+  var dx   = e.clientX - cx;
+  var dy   = e.clientY - cy;
+  var dist = Math.sqrt(dx*dx + dy*dy);
+  var radio = rect.width / 2;
+  // Fuera del círculo o dentro del agujero (40% del radio)
+  if(dist > radio || dist < radio * 0.4){ sclfChartLeave(); return; }
+  // Ángulo: 0° = arriba (12h), sentido horario — igual que conic-gradient
+  var ang = (Math.atan2(dy, dx) * 180 / Math.PI + 90 + 360) % 360;
+  var seg = null;
+  for(var i = 0; i < grupos.length; i++){
+    if(ang >= grupos[i].ini && ang < grupos[i].fin){ seg = grupos[i]; break; }
+  }
+  if(!seg) seg = grupos[grupos.length - 1]; // borde del último segmento
+  var tt   = document.getElementById('sclf-tooltip');
+  var totG = grupos.reduce(function(s,g){ return s+g.suma; }, 0);
+  var pct  = totG > 0 ? (seg.suma/totG*100).toFixed(1) : 0;
+  document.getElementById('sclf-tt-color').style.background = seg.color;
+  document.getElementById('sclf-tt-name').textContent  = seg.nombre;
+  document.getElementById('sclf-tt-val').textContent   = 'RD$'+Math.round(seg.suma).toLocaleString('en-US');
+  document.getElementById('sclf-tt-pct').textContent   = pct+'% del total gastos';
+  tt.style.borderLeft = '4px solid '+seg.color;
+  // Posición: siempre dentro de la pantalla
+  var tx = e.clientX + 16;
+  var ty = e.clientY - 20;
+  if(tx + 180 > window.innerWidth)  tx = e.clientX - 180;
+  if(ty + 90  > window.innerHeight) ty = e.clientY - 90;
+  tt.style.left    = tx + 'px';
+  tt.style.top     = ty + 'px';
+  tt.style.display = 'block';
+}
+
+function sclfChartLeave(){
+  var tt = document.getElementById('sclf-tooltip');
+  if(tt) tt.style.display = 'none';
+}
+
 function renderChartCats(){
   var el = document.getElementById('chart-cats');
   var gastos = {};
@@ -1574,21 +1619,25 @@ function renderChartCats(){
   grupos = grupos.filter(function(g){ return g.suma>0; });
   var totalGrupos = grupos.reduce(function(s,g){ return s+g.suma; },0);
 
-  // ── Gráfico conic-gradient (compatible con todos los navegadores modernos) ──
+  // ── Gráfico conic-gradient con tooltip interactivo ──────────────────
   var deg = 0;
-  var paradas = grupos.map(function(g){
+  var gruposAng = grupos.map(function(g){
     var frac = g.suma / totalGrupos;
-    var ini = deg;
+    var ini  = deg;
     deg += frac * 360;
-    return g.color+' '+ini.toFixed(1)+'deg '+deg.toFixed(1)+'deg';
+    return { nombre:g.nombre, color:g.color, suma:g.suma, ini:ini, fin:deg };
+  });
+  window._sclfPastelGrupos = gruposAng; // para el tooltip
+  var paradas = gruposAng.map(function(g){
+    return g.color+' '+g.ini.toFixed(1)+'deg '+g.fin.toFixed(1)+'deg';
   }).join(', ');
 
-  var pastel = '<div style="position:relative;width:200px;height:200px;margin:0 auto 1.2rem;border-radius:50%;'
+  var pastel = '<div onmousemove="sclfChartHover(event,this)" onmouseleave="sclfChartLeave()" '
+    +'style="position:relative;width:200px;height:200px;margin:0 auto 1.2rem;border-radius:50%;cursor:crosshair;'
     +'background:conic-gradient('+paradas+');box-shadow:0 4px 18px rgba(0,0,0,.13)">'
-    // hueco central para efecto donut
     +'<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);'
     +'width:80px;height:80px;border-radius:50%;background:#fff;display:flex;flex-direction:column;'
-    +'align-items:center;justify-content:center;box-shadow:0 0 0 3px #f0f0ea inset">'
+    +'align-items:center;justify-content:center;box-shadow:0 0 0 3px #f0f0ea inset;pointer-events:none">'
     +'<span style="font-size:10px;color:#6B7280;font-weight:700;text-transform:uppercase;letter-spacing:.04em">Total</span>'
     +'<span style="font-size:13px;font-weight:900;color:#1A1A2E;line-height:1.2">'+fmtC(totalGrupos)+'</span>'
     +'</div></div>';
@@ -3287,5 +3336,17 @@ function recalcProyTotals(){
 }
 </script>
 </div><!-- /app-wrapper -->
+
+<!-- TOOLTIP GLOBAL DEL GRÁFICO DE PASTEL -->
+<div id="sclf-tooltip" style="position:fixed;display:none;pointer-events:none;z-index:9999;
+  background:#1A1A2E;color:#fff;border-radius:10px;padding:9px 14px;
+  box-shadow:0 6px 20px rgba(0,0,0,.45);min-width:150px">
+  <div id="sclf-tt-color" style="width:12px;height:12px;border-radius:3px;display:inline-block;margin-right:5px;vertical-align:middle"></div>
+  <span id="sclf-tt-name" style="font-weight:700;font-size:13px;vertical-align:middle"></span>
+  <div style="margin-top:5px">
+    <span id="sclf-tt-val" style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;color:var(--gold)"></span>
+  </div>
+  <div id="sclf-tt-pct" style="font-size:11px;color:rgba(255,255,255,.5);margin-top:1px"></div>
+</div>
 </body>
 </html>
