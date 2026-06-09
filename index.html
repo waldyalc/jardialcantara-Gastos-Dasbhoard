@@ -1395,7 +1395,9 @@ var CAT_COL = {
   'Pago de Préstamo':'#C0392B',
   'Aporte Mensual a Mamá':'#F48FB1',
   'Aseo Personal (Peluquería, Pedicure y Otros)':'#F06292',
-  'Otros Gastos':'#90A4AE'
+  'Otros Gastos':'#90A4AE',
+  'Mantenimiento de Vehículo y Equipos':'#FF6F00',
+  'Limpieza y Mantenimiento del Hogar':'#795548'
 };
 
 function updateDescOptions(){
@@ -1605,18 +1607,13 @@ function renderChartCats(){
   var total = Object.values(gastos).reduce(function(s,v){ return s+v; },0);
   if(!total){ el.innerHTML='<div class="empty">Sin gastos registrados.<br/>Registra un gasto para ver el gráfico.</div>'; return; }
 
-  // Agrupar en los 5 grupos + capturar "sin grupo"
-  var grupos = GRUPOS_GASTO.map(function(g){
-    var suma = g.cats.reduce(function(s,c){ return s+(gastos[c]||0); },0);
-    return { nombre:g.nombre, color:g.color, suma:suma };
-  });
-  // Agregar todo lo que no cayó en ningún grupo
-  var enGrupos = GRUPOS_GASTO.reduce(function(all,g){ return all.concat(g.cats); },[]);
-  var sinGrupo = Object.keys(gastos).filter(function(k){ return enGrupos.indexOf(k)<0; })
-    .reduce(function(s,k){ return s+gastos[k]; },0);
-  if(sinGrupo>0) grupos.push({ nombre:'📦 Otros', color:'#90A4AE', suma:sinGrupo });
-
-  grupos = grupos.filter(function(g){ return g.suma>0; });
+  // Cada categoría individual es su propio segmento, ordenado de mayor a menor
+  var grupos = Object.keys(gastos)
+    .filter(function(k){ return gastos[k]>0; })
+    .sort(function(a,b){ return gastos[b]-gastos[a]; })
+    .map(function(k){
+      return { nombre:k, suma:gastos[k], color:CAT_COL[k]||'#90A4AE' };
+    });
   var totalGrupos = grupos.reduce(function(s,g){ return s+g.suma; },0);
 
   // ── Gráfico conic-gradient con tooltip interactivo ──────────────────
@@ -1642,19 +1639,20 @@ function renderChartCats(){
     +'<span style="font-size:13px;font-weight:900;color:#1A1A2E;line-height:1.2">'+fmtC(totalGrupos)+'</span>'
     +'</div></div>';
 
-  // Leyenda con barras
+  // Leyenda compacta — una fila por categoría
   var leyenda = grupos.map(function(g){
-    var pct = Math.round((g.suma/totalGrupos)*100);
-    return '<div style="margin-bottom:.6rem">'
-      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'
-      +'<span style="font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px">'
-      +'<span style="width:13px;height:13px;border-radius:3px;background:'+g.color+';display:inline-block;flex-shrink:0"></span>'
-      +g.nombre+'</span>'
-      +'<span style="font-size:13px;font-weight:700;color:'+g.color+'">'+pct+'%&nbsp;'
+    var pct = (g.suma/totalGrupos*100);
+    var pctStr = pct>=1?pct.toFixed(1):pct.toFixed(2);
+    return '<div style="margin-bottom:.35rem">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">'
+      +'<span style="font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px;min-width:0;overflow:hidden">'
+      +'<span style="width:11px;height:11px;border-radius:2px;background:'+g.color+';flex-shrink:0;display:inline-block"></span>'
+      +'<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+g.nombre+'</span></span>'
+      +'<span style="font-size:12px;font-weight:700;color:'+g.color+';white-space:nowrap;margin-left:.4rem">'+pctStr+'%&nbsp;'
       +'<span style="color:#6B7280;font-weight:400">'+fmt(g.suma)+'</span></span>'
       +'</div>'
-      +'<div style="height:7px;background:#E8E6DF;border-radius:99px;overflow:hidden">'
-      +'<div style="height:100%;width:'+pct+'%;background:'+g.color+';border-radius:99px;transition:width .5s"></div>'
+      +'<div style="height:5px;background:#E8E6DF;border-radius:99px;overflow:hidden">'
+      +'<div style="height:100%;width:'+pctStr+'%;background:'+g.color+';border-radius:99px;transition:width .6s"></div>'
       +'</div></div>';
   }).join('');
 
